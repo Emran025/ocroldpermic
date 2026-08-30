@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import 'application/composition.dart';
+import 'config/localization/l10n_config.dart';
+import 'config/localization/l10n_context.dart';
 import 'core/themes/app_theme.dart';
 import 'presentation/pages/ocr_workspace_page.dart';
 
@@ -22,7 +24,17 @@ class _OcrRuntimeAppState extends State<OcrRuntimeApp> {
   @override
   Widget build(BuildContext context) => MaterialApp(
         debugShowCheckedModeBanner: false,
-        title: 'ARCHIVAL VISION LAB',
+        onGenerateTitle: (context) => context.l10n.appName,
+        localizationsDelegates: L10nConfig.delegates,
+        supportedLocales: L10nConfig.supportedLocales,
+        localeResolutionCallback: (locale, supported) {
+          for (final candidate in supported) {
+            if (candidate.languageCode == locale?.languageCode) {
+              return candidate;
+            }
+          }
+          return L10nConfig.fallbackLocale;
+        },
         themeMode: _mode,
         theme: AppThemes.getTheme(AppThemeType.light),
         darkTheme: AppThemes.getTheme(AppThemeType.dark),

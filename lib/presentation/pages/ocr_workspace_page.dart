@@ -4,6 +4,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
+import '../../config/localization/l10n_context.dart';
 import '../../domain/entities/ocr_result.dart';
 import '../../domain/entities/release_manifest.dart';
 import '../../infrastructure/storage/ocr_result_exporter.dart';
@@ -66,24 +67,24 @@ class _OcrWorkspacePageState extends State<OcrWorkspacePage> {
     final source = await showDialog<String>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Add OCR package'),
+        title: Text(context.l10n.addOcrPackage),
         content: TextField(
           controller: controller,
           autofocus: true,
           keyboardType: TextInputType.url,
-          decoration: const InputDecoration(
-            labelText: 'Package manifest URL',
-            hintText: 'https://example.org/manifest.json',
+          decoration: InputDecoration(
+            labelText: context.l10n.manifestLabel,
+            hintText: context.l10n.manifestHint,
             border: OutlineInputBorder(),
           ),
         ),
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel')),
+              child: Text(context.l10n.cancel)),
           FilledButton(
               onPressed: () => Navigator.pop(context, controller.text),
-              child: const Text('Verify & install')),
+              child: Text(context.l10n.verifyInstall)),
         ],
       ),
     );
@@ -98,24 +99,24 @@ class _OcrWorkspacePageState extends State<OcrWorkspacePage> {
     final source = await showDialog<String>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Install remote OCR package'),
+        title: Text(context.l10n.installRemotePackage),
         content: TextField(
           controller: controller,
           autofocus: true,
           keyboardType: TextInputType.url,
-          decoration: const InputDecoration(
-            labelText: 'OCR package URL',
-            hintText: 'https://example.org/model.ocrpkg',
+          decoration: InputDecoration(
+            labelText: context.l10n.packageLabelInput,
+            hintText: context.l10n.packageHint,
             border: OutlineInputBorder(),
           ),
         ),
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel')),
+              child: Text(context.l10n.cancel)),
           FilledButton(
               onPressed: () => Navigator.pop(context, controller.text),
-              child: const Text('Download & install')),
+              child: Text(context.l10n.downloadInstall)),
         ],
       ),
     );
@@ -130,24 +131,24 @@ class _OcrWorkspacePageState extends State<OcrWorkspacePage> {
     final source = await showDialog<String>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Use remote image'),
+        title: Text(context.l10n.useRemoteImage),
         content: TextField(
           controller: controller,
           autofocus: true,
           keyboardType: TextInputType.url,
-          decoration: const InputDecoration(
-            labelText: 'Image URL',
-            hintText: 'https://example.org/manuscript.jpg',
+          decoration: InputDecoration(
+            labelText: context.l10n.imageUrl,
+            hintText: context.l10n.imageHint,
             border: OutlineInputBorder(),
           ),
         ),
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel')),
+              child: Text(context.l10n.cancel)),
           FilledButton(
               onPressed: () => Navigator.pop(context, controller.text),
-              child: const Text('Download image')),
+              child: Text(context.l10n.downloadImage)),
         ],
       ),
     );
@@ -176,7 +177,7 @@ class _OcrWorkspacePageState extends State<OcrWorkspacePage> {
               IconButton(
                   onPressed: widget.onToggleTheme,
                   icon: const Icon(Icons.contrast_outlined),
-                  tooltip: 'Toggle color theme'),
+                  tooltip: context.l10n.toggleTheme),
               const SizedBox(width: 4),
             ],
           ),
@@ -232,7 +233,7 @@ class _OcrWorkspacePageState extends State<OcrWorkspacePage> {
                     if (workspace.message != null)
                       _StatusNotice(
                           status: workspace.status,
-                          message: workspace.message!),
+                          message: workspace.message!.resolve(context.l10n)),
                     const SizedBox(height: 18),
                     _AdvancedControls(workspace: workspace),
                     const SizedBox(height: 18),
@@ -282,7 +283,7 @@ class _Brand extends StatelessWidget {
               color: Theme.of(context).colorScheme.onPrimary, size: 18),
         ),
         const SizedBox(width: 9),
-        const Text('OCR Runtime'),
+        Text(context.l10n.appSubtitle),
       ]);
 }
 
@@ -299,15 +300,12 @@ class _Intro extends StatelessWidget {
           ]),
           borderRadius: BorderRadius.circular(22),
         ),
-        child: const Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('Transcribe any supported writing system.',
-                  style: TextStyle(fontSize: 26, fontWeight: FontWeight.w700)),
-              SizedBox(height: 8),
-              Text(
-                  'Install a self-describing OCR package, select a manuscript image, and review a local, traceable transcription. The app is the runtime; the package supplies the model and alphabet.'),
-            ]),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text(context.l10n.introTitle,
+              style: TextStyle(fontSize: 26, fontWeight: FontWeight.w700)),
+          SizedBox(height: 8),
+          Text(context.l10n.introBody),
+        ]),
       );
 }
 
@@ -333,20 +331,19 @@ class _WorkflowPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) => _Panel(
         icon: Icons.layers_outlined,
-        title: '1. OCR package',
-        subtitle:
-            'The package defines the script, alphabet, model, and preprocessing contract.',
+        title: context.l10n.packageStep,
+        subtitle: context.l10n.packageDescription,
         child:
             Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
           if (workspace.installedModels.isEmpty)
-            const _EmptyHint(
-                icon: Icons.inventory_2_outlined,
-                text: 'No OCR package installed yet.')
+            _EmptyHint(
+                icon: Icons.inventory_2_outlined, text: context.l10n.noPackage)
           else
             DropdownButtonFormField<String>(
               initialValue: workspace.activeModel?.manifest.identity,
-              decoration: const InputDecoration(
-                  labelText: 'Active package', border: OutlineInputBorder()),
+              decoration: InputDecoration(
+                  labelText: context.l10n.activePackage,
+                  border: OutlineInputBorder()),
               items: workspace.installedModels
                   .map((model) => DropdownMenuItem(
                       value: model.manifest.identity,
@@ -372,26 +369,26 @@ class _WorkflowPanel extends StatelessWidget {
             OutlinedButton.icon(
                 onPressed: onRemotePackage,
                 icon: const Icon(Icons.link),
-                label: const Text('Manifest URL')),
+                label: Text(context.l10n.manifestUrl)),
             OutlinedButton.icon(
                 onPressed: onRemotePackageArchive,
                 icon: const Icon(Icons.cloud_download_outlined),
-                label: const Text('Package URL')),
+                label: Text(context.l10n.packageUrl)),
             OutlinedButton.icon(
                 onPressed: onLocalPackage,
                 icon: const Icon(Icons.upload_file_outlined),
-                label: const Text('Import package')),
+                label: Text(context.l10n.importPackage)),
             if (workspace.activeModel?.manifest.sourceUri?.scheme == 'https')
               TextButton.icon(
                   onPressed: onCheckUpdate,
                   icon: const Icon(Icons.refresh),
-                  label: const Text('Check update')),
+                  label: Text(context.l10n.checkUpdate)),
             if (workspace.activeModel != null &&
                 workspace.installedModels.length > 1)
               TextButton.icon(
                   onPressed: () => onRemoveModel(workspace.activeModel!),
                   icon: const Icon(Icons.delete_outline),
-                  label: const Text('Remove')),
+                  label: Text(context.l10n.remove)),
           ]),
         ]),
       );
@@ -409,11 +406,20 @@ class _ModelDetails extends StatelessWidget {
             borderRadius: BorderRadius.circular(12)),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Text(
-              '${model.manifest.alphabet.length} classes · ${model.manifest.modelFormat.name.toUpperCase()} · ${model.manifest.input.width}×${model.manifest.input.height}',
+              context.l10n.classesDetail(
+                  model.manifest.alphabet.length,
+                  model.manifest.modelFormat.name.toUpperCase(),
+                  model.manifest.input.width,
+                  model.manifest.input.height),
               style: Theme.of(context).textTheme.labelMedium),
           const SizedBox(height: 4),
           Text(
-              'Alphabet v${model.manifest.alphabetVersion} · ${model.manifest.readingDirection == ReadingDirection.rightToLeft ? 'RTL' : 'LTR'}',
+              context.l10n.alphabetDetail(
+                  model.manifest.alphabetVersion,
+                  model.manifest.readingDirection ==
+                          ReadingDirection.rightToLeft
+                      ? context.l10n.rtl
+                      : context.l10n.ltr),
               style: Theme.of(context).textTheme.bodySmall),
         ]),
       );
@@ -435,9 +441,8 @@ class _InputPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) => _Panel(
         icon: Icons.image_search_outlined,
-        title: '2. Input image',
-        subtitle:
-            'Use a photo, camera capture, or a validated remote image. Inference stays on-device.',
+        title: context.l10n.inputStep,
+        subtitle: context.l10n.inputDescription,
         child:
             Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
           Container(
@@ -447,12 +452,12 @@ class _InputPanel extends StatelessWidget {
                 borderRadius: BorderRadius.circular(14)),
             clipBehavior: Clip.antiAlias,
             child: workspace.imagePath == null
-                ? const _EmptyHint(
+                ? _EmptyHint(
                     icon: Icons.add_photo_alternate_outlined,
-                    text: 'No image selected')
+                    text: context.l10n.noImage)
                 : Image.file(File(workspace.imagePath!),
                     fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) => const _EmptyHint(
+                    errorBuilder: (_, __, ___) => _EmptyHint(
                         icon: Icons.broken_image_outlined,
                         text: 'Image unavailable')),
           ),
@@ -461,19 +466,19 @@ class _InputPanel extends StatelessWidget {
             OutlinedButton.icon(
                 onPressed: onGallery,
                 icon: const Icon(Icons.photo_library_outlined),
-                label: const Text('Gallery')),
+                label: Text(context.l10n.gallery)),
             OutlinedButton.icon(
                 onPressed: onCamera,
                 icon: const Icon(Icons.photo_camera_outlined),
-                label: const Text('Camera')),
+                label: Text(context.l10n.camera)),
             OutlinedButton.icon(
                 onPressed: onFile,
                 icon: const Icon(Icons.folder_open_outlined),
-                label: const Text('Files')),
+                label: Text(context.l10n.files)),
             OutlinedButton.icon(
                 onPressed: onRemote,
                 icon: const Icon(Icons.language_outlined),
-                label: const Text('Image URL')),
+                label: Text(context.l10n.imageUrl)),
           ]),
         ]),
       );
@@ -492,9 +497,8 @@ class _RunPanel extends StatelessWidget {
         !running;
     return _Panel(
       icon: Icons.bolt_outlined,
-      title: '3. Run & review',
-      subtitle:
-          'Detection order is reconstructed into lines and every character remains inspectable.',
+      title: context.l10n.runStep,
+      subtitle: context.l10n.runDescription,
       child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
         FilledButton.icon(
           onPressed: ready ? onRun : null,
@@ -503,7 +507,7 @@ class _RunPanel extends StatelessWidget {
                   dimension: 18,
                   child: CircularProgressIndicator(strokeWidth: 2))
               : const Icon(Icons.play_arrow_rounded),
-          label: Text(running ? 'Running OCR…' : 'Run on-device OCR'),
+          label: Text(running ? context.l10n.runningOcr : context.l10n.runOcr),
         ),
         const SizedBox(height: 14),
         const _SafetyStatement(),
@@ -521,10 +525,9 @@ class _SafetyStatement extends StatelessWidget {
         Icon(Icons.shield_outlined,
             size: 18, color: Theme.of(context).colorScheme.primary),
         const SizedBox(width: 8),
-        const Expanded(
-            child: Text(
-                'Package checks, alphabet alignment, SHA-256 verification, and atomic activation protect the active model.',
-                style: TextStyle(fontSize: 12))),
+        Expanded(
+            child: Text(context.l10n.shieldStatement,
+                style: const TextStyle(fontSize: 12))),
       ]);
 }
 
@@ -537,19 +540,18 @@ class _AdvancedControls extends StatelessWidget {
         clipBehavior: Clip.antiAlias,
         child: ExpansionTile(
           leading: const Icon(Icons.tune_outlined),
-          title: const Text('Research controls'),
-          subtitle: const Text(
-              'Confidence and suppression thresholds affect displayed detections, not model accuracy.'),
+          title: Text(context.l10n.researchControls),
+          subtitle: Text(context.l10n.researchDescription),
           childrenPadding: const EdgeInsets.fromLTRB(18, 0, 18, 18),
           children: [
             _ThresholdSlider(
-              label: 'Confidence threshold',
+              label: context.l10n.confidenceThreshold,
               value: workspace.configuration.confidenceThreshold,
               onChanged: (value) =>
                   workspace.updateConfiguration(confidenceThreshold: value),
             ),
             _ThresholdSlider(
-              label: 'IoU / NMS threshold',
+              label: context.l10n.iouThreshold,
               value: workspace.configuration.iouThreshold,
               onChanged: (value) =>
                   workspace.updateConfiguration(iouThreshold: value),
@@ -557,7 +559,8 @@ class _AdvancedControls extends StatelessWidget {
             Align(
                 alignment: Alignment.centerLeft,
                 child: Text(
-                    'Maximum detections: ${workspace.configuration.maxDetections}',
+                    context.l10n.maximumDetections(
+                        workspace.configuration.maxDetections),
                     style: Theme.of(context).textTheme.bodySmall)),
           ],
         ),
@@ -622,38 +625,40 @@ class _ResultsPanel extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.all(18),
         child: result == null
-            ? const _EmptyHint(
-                icon: Icons.fact_check_outlined,
-                text:
-                    'Your transcription, confidence data, and model traceability will appear here after OCR runs.')
+            ? _EmptyHint(
+                icon: Icons.fact_check_outlined, text: context.l10n.noResult)
             : Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                 Row(children: [
                   Expanded(
-                      child: Text('4. Inspect transcription',
+                      child: Text(context.l10n.reviewStep,
                           style: Theme.of(context)
                               .textTheme
                               .titleLarge
                               ?.copyWith(fontWeight: FontWeight.w700))),
                   PopupMenuButton<OcrExportFormat>(
-                    tooltip: 'Export result',
+                    tooltip: context.l10n.exportResult,
                     onSelected: (format) => workspace.export(format),
-                    itemBuilder: (context) => const [
+                    itemBuilder: (context) => [
                       PopupMenuItem(
                           value: OcrExportFormat.text,
-                          child: Text('Export TXT')),
+                          child: Text(context.l10n.exportTxt)),
                       PopupMenuItem(
                           value: OcrExportFormat.json,
-                          child: Text('Export research JSON')),
+                          child: Text(context.l10n.exportJson)),
                       PopupMenuItem(
                           value: OcrExportFormat.csv,
-                          child: Text('Export glyph CSV')),
+                          child: Text(context.l10n.exportCsv)),
                     ],
                     icon: const Icon(Icons.ios_share_outlined),
                   ),
                 ]),
                 const SizedBox(height: 4),
                 Text(
-                    '${result.orderedText.detections.length} glyphs · ${(result.orderedText.readingConfidence * 100).toStringAsFixed(1)}% mean confidence · ${result.inferenceTime.inMilliseconds} ms',
+                    context.l10n.glyphSummary(
+                        result.orderedText.detections.length,
+                        (result.orderedText.readingConfidence * 100)
+                            .toStringAsFixed(1),
+                        result.inferenceTime.inMilliseconds),
                     style: Theme.of(context).textTheme.bodySmall),
                 const SizedBox(height: 16),
                 LayoutBuilder(builder: (context, constraints) {
@@ -689,19 +694,19 @@ class _ResultsPanel extends StatelessWidget {
                 const SizedBox(height: 12),
                 Wrap(spacing: 6, runSpacing: 4, children: [
                   FilterChip(
-                      label: const Text('Boxes'),
+                      label: Text(context.l10n.boxes),
                       selected: showBoxes,
                       onSelected: onShowBoxes),
                   FilterChip(
-                      label: const Text('Labels'),
+                      label: Text(context.l10n.labels),
                       selected: showLabels,
                       onSelected: onShowLabels),
                   FilterChip(
-                      label: const Text('Confidence'),
+                      label: Text(context.l10n.confidence),
                       selected: showConfidence,
                       onSelected: onShowConfidence),
                   FilterChip(
-                      label: const Text('Unicode'),
+                      label: Text(context.l10n.unicode),
                       selected: showUnicode,
                       onSelected: onShowUnicode),
                 ]),
@@ -826,20 +831,18 @@ class _TranscriptionEditor extends StatelessWidget {
           maxLines: 12,
           onChanged: onChanged,
           decoration: InputDecoration(
-            labelText: 'Editable transcription',
+            labelText: context.l10n.editableTranscription,
             helperText: result.hasCorrections
-                ? 'Edited text is preserved separately from raw model output.'
-                : 'Raw model output; edits create a separate corrected transcription.',
+                ? context.l10n.editedHelp
+                : context.l10n.rawHelp,
             border: const OutlineInputBorder(),
           ),
           style: const TextStyle(fontSize: 20),
         ),
         const SizedBox(height: 12),
         if (selectedGlyph == null)
-          const _EmptyHint(
-              icon: Icons.ads_click_outlined,
-              text:
-                  'Select a glyph in the image to inspect its class mapping and alternatives.')
+          _EmptyHint(
+              icon: Icons.ads_click_outlined, text: context.l10n.selectGlyph)
         else
           _GlyphInspector(glyph: selectedGlyph!),
       ]);
@@ -861,8 +864,10 @@ class _GlyphInspector extends StatelessWidget {
                 style: const TextStyle(fontSize: 28)),
             const SizedBox(width: 10),
             Expanded(
-                child: Text(
-                    '${glyph.glyph.unicode} · class ${glyph.glyph.id}\n${(glyph.confidence * 100).toStringAsFixed(1)}% confidence')),
+                child: Text(context.l10n.classDetail(
+                    glyph.glyph.unicode,
+                    glyph.glyph.id,
+                    (glyph.confidence * 100).toStringAsFixed(1)))),
           ]),
           if (glyph.glyph.name != null)
             Padding(
@@ -870,7 +875,7 @@ class _GlyphInspector extends StatelessWidget {
                 child: Text(glyph.glyph.name!)),
           if (glyph.alternatives.length > 1) ...[
             const SizedBox(height: 8),
-            Text('Model alternatives',
+            Text(context.l10n.modelAlternatives,
                 style: Theme.of(context).textTheme.labelLarge),
             Wrap(
                 spacing: 6,
@@ -898,17 +903,20 @@ class _ReproducibilityMetadata extends StatelessWidget {
             borderRadius: BorderRadius.circular(12)),
         child: Wrap(spacing: 16, runSpacing: 6, children: [
           _Metadata(
-              label: 'Package',
+              label: context.l10n.packageLabel,
               value:
                   '${result.model.manifest.packageId} v${result.model.manifest.version}'),
           _Metadata(
-              label: 'Alphabet', value: result.model.manifest.alphabetVersion),
-          _Metadata(label: 'Model', value: result.model.manifest.modelVersion),
+              label: context.l10n.alphabetLabel,
+              value: result.model.manifest.alphabetVersion),
           _Metadata(
-              label: 'Run',
+              label: context.l10n.modelLabel,
+              value: result.model.manifest.modelVersion),
+          _Metadata(
+              label: context.l10n.runLabel,
               value: result.createdAt.toLocal().toString().split('.').first),
           _Metadata(
-              label: 'Threshold',
+              label: context.l10n.thresholdLabel,
               value:
                   result.configuration.confidenceThreshold.toStringAsFixed(2)),
         ]),

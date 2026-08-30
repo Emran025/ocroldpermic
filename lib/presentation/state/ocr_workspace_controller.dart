@@ -7,6 +7,7 @@ import '../../domain/entities/ocr_result.dart';
 import '../../domain/entities/release_manifest.dart';
 import '../../domain/repositories/ocr_ports.dart';
 import '../../domain/usecases/run_ocr.dart';
+import '../../config/localization/workspace_messages.dart';
 import '../../infrastructure/network/remote_image_loader.dart';
 import '../../infrastructure/storage/ocr_result_exporter.dart';
 
@@ -40,8 +41,8 @@ class OcrWorkspaceController extends ChangeNotifier {
 
   OcrWorkspaceStatus _status = OcrWorkspaceStatus.idle;
   OcrWorkspaceStatus get status => _status;
-  String? _message;
-  String? get message => _message;
+  WorkspaceMessage? _message;
+  WorkspaceMessage? get message => _message;
   List<InstalledModel> _installedModels = const [];
   List<InstalledModel> get installedModels =>
       List.unmodifiable(_installedModels);
@@ -66,7 +67,7 @@ class OcrWorkspaceController extends ChangeNotifier {
           ? OcrWorkspaceStatus.idle
           : OcrWorkspaceStatus.ready;
     } catch (_) {
-      _fail('Installed OCR packages could not be loaded.');
+      _fail(WorkspaceMessages.packagesLoad);
     }
     notifyListeners();
   }
@@ -82,11 +83,11 @@ class OcrWorkspaceController extends ChangeNotifier {
   Future<void> fetchRemoteImage(String url) async {
     final uri = Uri.tryParse(url.trim());
     if (uri == null) {
-      _fail('Enter a valid image URL.');
+      _fail(WorkspaceMessages.invalidImageUrl);
       return;
     }
     _status = OcrWorkspaceStatus.downloading;
-    _message = 'Downloading image…';
+    _message = WorkspaceMessages.downloadingImage;
     _transferProgress = null;
     notifyListeners();
     try {
@@ -101,7 +102,7 @@ class OcrWorkspaceController extends ChangeNotifier {
           : OcrWorkspaceStatus.ready;
       _message = null;
     } catch (_) {
-      _fail('The image URL could not be downloaded or decoded.');
+      _fail(WorkspaceMessages.imageDownloadFailed);
     }
     notifyListeners();
   }
@@ -109,16 +110,16 @@ class OcrWorkspaceController extends ChangeNotifier {
   Future<void> installRemoteManifest(String source) async {
     final uri = Uri.tryParse(source.trim());
     if (uri == null || !(uri.scheme == 'https' || uri.scheme == 'http')) {
-      _fail('Enter a valid HTTP(S) package manifest URL.');
+      _fail(WorkspaceMessages.invalidManifestUrl);
       return;
     }
     _status = OcrWorkspaceStatus.checking;
-    _message = 'Checking OCR package…';
+    _message = WorkspaceMessages.checkingPackage;
     notifyListeners();
     try {
       final manifest = await catalog.fetchManifest(uri);
       _status = OcrWorkspaceStatus.downloading;
-      _message = 'Downloading ${manifest.displayName}…';
+      _message = WorkspaceMessages.downloadingPackage;
       _transferProgress = null;
       notifyListeners();
       await models.installFromManifest(
@@ -129,10 +130,9 @@ class OcrWorkspaceController extends ChangeNotifier {
       );
       await _reloadModels();
       _status = OcrWorkspaceStatus.ready;
-      _message = '${manifest.displayName} is ready for offline OCR.';
+      _message = WorkspaceMessages.ready(manifest.displayName);
     } catch (_) {
-      _fail(
-          'The OCR package is invalid, incompatible, or could not be installed.');
+      _fail(WorkspaceMessages.invalidRemotePackage);
     }
     notifyListeners();
   }
@@ -140,11 +140,11 @@ class OcrWorkspaceController extends ChangeNotifier {
   Future<void> installRemotePackage(String source) async {
     final uri = Uri.tryParse(source.trim());
     if (uri == null || !(uri.scheme == 'https' || uri.scheme == 'http')) {
-      _fail('Enter a valid HTTP(S) OCR package URL.');
+      _fail(WorkspaceMessages.invalidManifestUrl);
       return;
     }
     _status = OcrWorkspaceStatus.downloading;
-    _message = 'Downloading OCR package…';
+    _message = WorkspaceMessages.downloadingPackage;
     _transferProgress = null;
     notifyListeners();
     try {
@@ -156,21 +156,20 @@ class OcrWorkspaceController extends ChangeNotifier {
               (model) => model.manifest.identity == installed.manifest.identity)
           .firstOrNull;
       _status = OcrWorkspaceStatus.ready;
-      _message = '${installed.manifest.displayName} is ready for offline OCR.';
+      _message = WorkspaceMessages.ready(installed.manifest.displayName);
     } catch (_) {
-      _fail(
-          'The remote OCR package is invalid, unsafe, or could not be installed.');
+      _fail(WorkspaceMessages.invalidRemotePackage);
     }
     notifyListeners();
   }
 
   Future<void> importPackage(String path) async {
     if (!await File(path).exists()) {
-      _fail('The selected OCR package is no longer available.');
+      _fail(WorkspaceMessages.missingPackage);
       return;
     }
     _status = OcrWorkspaceStatus.downloading;
-    _message = 'Validating local OCR package…';
+    _message = WorkspaceMessages.validatingPackage;
     _transferProgress = null;
     notifyListeners();
     try {
@@ -182,16 +181,16 @@ class OcrWorkspaceController extends ChangeNotifier {
               (model) => model.manifest.identity == installed.manifest.identity)
           .firstOrNull;
       _status = OcrWorkspaceStatus.ready;
-      _message = '${installed.manifest.displayName} is ready for offline OCR.';
+      _message = WorkspaceMessages.ready(installed.manifest.displayName);
     } catch (_) {
-      _fail('The local OCR package is invalid, unsafe, or incompatible.');
+      _fail(WorkspaceMessages.invalidLocalPackage);
     }
     notifyListeners();
   }
 
   Future<void> selectModel(InstalledModel model) async {
     _status = OcrWorkspaceStatus.loadingModels;
-    _message = 'Activating ${model.manifest.displayName}…';
+    _message = WorkspaceMessages.activating(model.manifest.displayName);
     notifyListeners();
     try {
       await models.activate(model.manifest.packageId, model.manifest.version);
@@ -199,7 +198,7 @@ class OcrWorkspaceController extends ChangeNotifier {
       _status = OcrWorkspaceStatus.ready;
       _message = null;
     } catch (_) {
-      _fail('This OCR package could not be activated.');
+      _fail(WorkspaceMessages.activationFailed);
     }
     notifyListeners();
   }
@@ -212,8 +211,7 @@ class OcrWorkspaceController extends ChangeNotifier {
           ? OcrWorkspaceStatus.idle
           : OcrWorkspaceStatus.ready;
     } catch (_) {
-      _fail(
-          'The active OCR package cannot be removed. Activate a replacement first.');
+      _fail(WorkspaceMessages.removeActiveFailed);
     }
     notifyListeners();
   }
@@ -233,15 +231,15 @@ class OcrWorkspaceController extends ChangeNotifier {
     final model = _activeModel;
     final image = _imagePath;
     if (model == null) {
-      _fail('Install or select an OCR package before running OCR.');
+      _fail(WorkspaceMessages.selectPackageFirst);
       return;
     }
     if (image == null) {
-      _fail('Select, capture, or download an image before running OCR.');
+      _fail(WorkspaceMessages.selectImageFirst);
       return;
     }
     _status = OcrWorkspaceStatus.running;
-    _message = 'Running on-device OCR…';
+    _message = WorkspaceMessages.ocrRunning;
     _result = null;
     notifyListeners();
     try {
@@ -249,11 +247,10 @@ class OcrWorkspaceController extends ChangeNotifier {
           imagePath: image, model: model, configuration: _configuration);
       _status = OcrWorkspaceStatus.completed;
       _message = _result!.orderedText.detections.isEmpty
-          ? 'No glyphs met the current confidence threshold.'
+          ? WorkspaceMessages.noGlyphs
           : null;
     } catch (_) {
-      _fail(
-          'OCR could not be completed. Check the image and selected model package.');
+      _fail(WorkspaceMessages.ocrFailed);
     }
     notifyListeners();
   }
@@ -271,11 +268,11 @@ class OcrWorkspaceController extends ChangeNotifier {
     if (current == null) return null;
     try {
       final file = await exporter.export(current, format);
-      _message = 'Export created: ${file.path}';
+      _message = WorkspaceMessages.exportCreated(file.path);
       notifyListeners();
       return file;
     } catch (_) {
-      _fail('The OCR result could not be exported.');
+      _fail(WorkspaceMessages.exportFailed);
       notifyListeners();
       return null;
     }
@@ -283,22 +280,22 @@ class OcrWorkspaceController extends ChangeNotifier {
 
   Future<void> checkForUpdate() async {
     _status = OcrWorkspaceStatus.checking;
-    _message = 'Checking for package updates…';
+    _message = WorkspaceMessages.checkingUpdates;
     notifyListeners();
     final update = await updates.check(manual: true);
     _status = _activeModel == null
         ? OcrWorkspaceStatus.idle
         : OcrWorkspaceStatus.ready;
     _message = switch (update) {
-      UpdateOffline() => 'Offline. Installed OCR packages remain available.',
-      UpdateUpToDate() => 'The active OCR package is up to date.',
+      UpdateOffline() => WorkspaceMessages.offline,
+      UpdateUpToDate() => WorkspaceMessages.upToDate,
       UpdateAvailable(:final manifest) =>
-        'Update available: ${manifest.version}. Open the package manager to install it.',
+        WorkspaceMessages.updateAvailable(manifest.version),
       UpdateActivated(:final model) =>
-        '${model.manifest.displayName} updated successfully.',
-      UpdateInstalling() => 'Installing package update…',
-      UpdateChecking() => 'Checking for package updates…',
-      UpdateFailed(:final message) => message,
+        WorkspaceMessages.updated(model.manifest.displayName),
+      UpdateInstalling() => WorkspaceMessages.installingUpdate,
+      UpdateChecking() => WorkspaceMessages.checkingUpdates,
+      UpdateFailed(:final message) => WorkspaceMessages.raw(message),
     };
     notifyListeners();
   }
@@ -311,11 +308,10 @@ class OcrWorkspaceController extends ChangeNotifier {
 
   void _onTransfer(ModelTransferProgress progress) {
     _transferProgress = progress.fraction;
-    _message = progress.message ?? _message;
     notifyListeners();
   }
 
-  void _fail(String message) {
+  void _fail(WorkspaceMessage message) {
     _status = OcrWorkspaceStatus.failed;
     _message = message;
   }
