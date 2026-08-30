@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:old_permic_ocr_mobile/domain/entities/ocr_result.dart';
-import 'package:old_permic_ocr_mobile/domain/entities/release_manifest.dart';
+import 'package:ocroldpermic/domain/entities/ocr_result.dart';
+import 'package:ocroldpermic/domain/entities/release_manifest.dart';
 
 GlyphDetection detection(GlyphClass glyph, double left, double top,
         {double confidence = .9}) =>

@@ -1,8 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:old_permic_ocr_mobile/domain/entities/ocr_result.dart';
-import 'package:old_permic_ocr_mobile/domain/entities/release_manifest.dart';
-import 'package:old_permic_ocr_mobile/domain/repositories/ocr_ports.dart';
-import 'package:old_permic_ocr_mobile/domain/usecases/run_ocr.dart';
+import 'package:ocroldpermic/domain/entities/ocr_result.dart';
+import 'package:ocroldpermic/domain/entities/release_manifest.dart';
+import 'package:ocroldpermic/domain/repositories/ocr_ports.dart';
+import 'package:ocroldpermic/domain/usecases/run_ocr.dart';
 
 const _hash =
     'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';

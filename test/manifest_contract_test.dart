@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:old_permic_ocr_mobile/data/models/ocr_package_manifest_model.dart';
-import 'package:old_permic_ocr_mobile/domain/entities/release_manifest.dart';
+import 'package:ocroldpermic/data/models/ocr_package_manifest_model.dart';
+import 'package:ocroldpermic/domain/entities/release_manifest.dart';
 
 void main() {
   const validManifest = {

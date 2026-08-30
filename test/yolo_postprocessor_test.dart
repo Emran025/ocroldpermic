@@ -1,10 +1,10 @@
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:old_permic_ocr_mobile/domain/entities/ocr_result.dart';
-import 'package:old_permic_ocr_mobile/domain/entities/release_manifest.dart';
-import 'package:old_permic_ocr_mobile/infrastructure/inference/image_preprocessor.dart';
-import 'package:old_permic_ocr_mobile/infrastructure/inference/yolo_postprocessor.dart';
+import 'package:ocroldpermic/domain/entities/ocr_result.dart';
+import 'package:ocroldpermic/domain/entities/release_manifest.dart';
+import 'package:ocroldpermic/infrastructure/inference/image_preprocessor.dart';
+import 'package:ocroldpermic/infrastructure/inference/yolo_postprocessor.dart';
 
 const _hash =
     'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';

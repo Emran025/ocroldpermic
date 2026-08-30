@@ -1,4 +1,4 @@
-name: old_permic_ocr_mobile
+name: ocroldpermic
 description: Generic, offline-first Flutter OCR runtime for self-describing model packages.
 publish_to: "none"
 version: 0.1.0+1

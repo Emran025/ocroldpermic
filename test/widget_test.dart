@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:old_permic_ocr_mobile/main.dart';
+import 'package:ocroldpermic/main.dart';
 
 void main() {
   testWidgets('renders the generic OCR runtime workflow', (tester) async {
