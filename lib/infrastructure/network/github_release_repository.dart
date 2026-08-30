@@ -1,4 +1,6 @@
-import 'package:dio/dio.dart';
+import 'dart:convert';
+
+import '../../core/api/api_consumer.dart';
 
 import '../../data/models/ocr_package_manifest_model.dart';
 import '../../domain/entities/release_manifest.dart';
@@ -7,32 +9,24 @@ import '../../domain/repositories/ocr_ports.dart';
 /// Generic HTTP manifest catalog. GitHub Releases can host these files, but the
 /// domain layer remains independent of GitHub-specific APIs and URLs.
 class RemoteModelCatalog implements ModelCatalog {
-  RemoteModelCatalog(this.client, {this.validator = const ManifestValidator()});
+  RemoteModelCatalog(this.api, {this.validator = const ManifestValidator()});
 
-  final Dio client;
+  final ApiConsumer api;
   final ManifestValidator validator;
 
   @override
   Future<OcrPackageManifest> fetchManifest(Uri source) async {
-    if (source.scheme != 'https' &&
-        source.scheme != 'http' &&
-        source.scheme != 'file') {
+    if (source.scheme != 'https' && source.scheme != 'http') {
       throw const FormatException(
           'Only HTTPS, HTTP, and local manifest sources are supported.');
     }
-    final response = await client.get<String>(
-      source.toString(),
-      options: Options(
-          responseType: ResponseType.plain,
-          headers: const {'Accept': 'application/json'}),
-    );
-    if (response.statusCode == null ||
-        response.statusCode! >= 400 ||
-        response.data == null) {
+    final response = await api.get(source.toString());
+    if (response == null) {
       throw const FormatException('The model manifest could not be retrieved.');
     }
-    final manifest = OcrPackageManifestModel.fromJsonString(response.data!,
-        sourceUri: source);
+    final raw = response is String ? response : jsonEncode(response);
+    final manifest =
+        OcrPackageManifestModel.fromJsonString(raw, sourceUri: source);
     final validation = validator.validate(manifest);
     if (!validation.isValid) {
       throw FormatException(validation.problems.join(' '));

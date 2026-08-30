@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'application/composition.dart';
+import 'core/themes/app_theme.dart';
 import 'presentation/pages/ocr_workspace_page.dart';
 
 void main() => runApp(const OcrRuntimeApp());
@@ -21,44 +22,19 @@ class _OcrRuntimeAppState extends State<OcrRuntimeApp> {
   @override
   Widget build(BuildContext context) => MaterialApp(
         debugShowCheckedModeBanner: false,
-        title: 'OCR Runtime',
+        title: 'ARCHIVAL VISION LAB',
         themeMode: _mode,
-        theme: _theme(Brightness.light),
-        darkTheme: _theme(Brightness.dark),
+        theme: AppThemes.getTheme(AppThemeType.light),
+        darkTheme: AppThemes.getTheme(AppThemeType.dark),
         home: OcrWorkspacePage(
           workspace: _dependencies.workspace,
           onToggleTheme: () => setState(() => _mode =
               _mode == ThemeMode.dark ? ThemeMode.light : ThemeMode.dark),
         ),
       );
-
-  ThemeData _theme(Brightness brightness) {
-    final scheme = ColorScheme.fromSeed(
-        seedColor: const Color(0xff2455a4), brightness: brightness);
-    return ThemeData(
-      colorScheme: scheme,
-      brightness: brightness,
-      useMaterial3: true,
-      scaffoldBackgroundColor:
-          brightness == Brightness.light ? const Color(0xfff7f8fc) : null,
-      cardTheme: CardThemeData(
-        elevation: 0,
-        margin: EdgeInsets.zero,
-        shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(18),
-            side: BorderSide(color: scheme.outlineVariant)),
-      ),
-      inputDecorationTheme: InputDecorationTheme(
-        filled: true,
-        fillColor: scheme.surface,
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-      ),
-    );
-  }
 }
 
-/// Temporary compatibility entry point for code importing the old root widget.
+/// Compatibility entry point for code importing the former root widget.
 @Deprecated('Use OcrRuntimeApp instead.')
 class OldPermicApp extends OcrRuntimeApp {
   const OldPermicApp({super.key, super.initialUpdateCheck});
