@@ -1,37 +1,82 @@
-import 'dart:convert';
 import 'package:dio/dio.dart';
+
+import '../../data/models/ocr_package_manifest_model.dart';
 import '../../domain/entities/release_manifest.dart';
 import '../../domain/repositories/ocr_ports.dart';
 
-class GithubReleaseRepository implements ReleaseRepository {
-  GithubReleaseRepository(this.client, {this.latestUrl = 'https://raw.githubusercontent.com/Emran025/old-permic-ocr-lab/colab-results/artifacts/published/latest.json'});
+/// Generic HTTP manifest catalog. GitHub Releases can host these files, but the
+/// domain layer remains independent of GitHub-specific APIs and URLs.
+class RemoteModelCatalog implements ModelCatalog {
+  RemoteModelCatalog(this.client, {this.validator = const ManifestValidator()});
+
   final Dio client;
-  final String latestUrl;
+  final ManifestValidator validator;
 
   @override
-  Future<ReleaseManifest> fetchLatest() async {
-    final response = await client.get<String>(latestUrl, options: Options(responseType: ResponseType.plain));
-    final pointer = jsonDecode(response.data ?? '{}') as Map<String, dynamic>;
-    final path = pointer['release_path'] as String? ?? pointer['path'] as String?;
-    if (path == null || path.contains('..') || !path.endsWith('/release.json')) throw const FormatException('مؤشر إصدار غير صالح.');
-    final base = latestUrl.substring(0, latestUrl.indexOf('/artifacts/'));
-    final releaseResponse = await client.get<String>('$base/$path', options: Options(responseType: ResponseType.plain));
-    final json = jsonDecode(releaseResponse.data ?? '{}') as Map<String, dynamic>;
-    final classMap = ((json['class_map'] ?? json['classMap']) as List<dynamic>).map((item) {
-      final value = item as Map<String, dynamic>;
-      final codePoint = value['code_point'] is int ? value['code_point'] as int : int.parse(value['code_point'].toString());
-      return GlyphClass(id: value['id'] as int, codePoint: codePoint, label: String.fromCharCode(codePoint));
-    }).toList(growable: false);
-    final artifact = (json['onnx'] as Map<String, dynamic>);
-    final release = ReleaseManifest(
-      releaseId: json['release_id'] as String,
-      createdAtUtc: json['created_at_utc'] as String,
-      modelScope: json['model_scope'] as String,
-      releaseSha256: json['release_sha256'] as String,
-      onnx: ReleaseArtifact(path: artifact['path'] as String, bytes: artifact['bytes'] as int, sha256: artifact['sha256'] as String),
-      classMap: classMap,
+  Future<OcrPackageManifest> fetchManifest(Uri source) async {
+    if (source.scheme != 'https' &&
+        source.scheme != 'http' &&
+        source.scheme != 'file') {
+      throw const FormatException(
+          'Only HTTPS, HTTP, and local manifest sources are supported.');
+    }
+    final response = await client.get<String>(
+      source.toString(),
+      options: Options(
+          responseType: ResponseType.plain,
+          headers: const {'Accept': 'application/json'}),
     );
-    if (!release.isOldPermicContract) throw const FormatException('الإصدار لا يطابق عقد Old Permic ذي 38 محرفًا.');
-    return release;
+    if (response.statusCode == null ||
+        response.statusCode! >= 400 ||
+        response.data == null) {
+      throw const FormatException('The model manifest could not be retrieved.');
+    }
+    final manifest = OcrPackageManifestModel.fromJsonString(response.data!,
+        sourceUri: source);
+    final validation = validator.validate(manifest);
+    if (!validation.isValid) {
+      throw FormatException(validation.problems.join(' '));
+    }
+    return manifest;
+  }
+
+  @override
+  Future<OcrPackageManifest?> checkForUpdate(InstalledModel installed) async {
+    final source = installed.manifest.sourceUri;
+    if (source == null ||
+        (source.scheme != 'https' && source.scheme != 'http')) {
+      return null;
+    }
+    final remote = await fetchManifest(source);
+    if (remote.packageId != installed.manifest.packageId) {
+      throw const FormatException(
+          'The update source returned a different package identity.');
+    }
+    return _compareVersions(remote.version, installed.manifest.version) > 0
+        ? remote
+        : null;
+  }
+
+  static Uri resolveArtifact(Uri manifestUri, String artifactPath) {
+    final artifactUri = Uri.tryParse(artifactPath);
+    if (artifactUri != null && artifactUri.hasScheme) return artifactUri;
+    return manifestUri.resolve(artifactPath);
+  }
+
+  int _compareVersions(String a, String b) {
+    List<int> values(String version) => version
+        .split(RegExp(r'[.+-]'))
+        .map(
+            (part) => int.tryParse(part.replaceAll(RegExp(r'[^0-9]'), '')) ?? 0)
+        .toList();
+    final left = values(a);
+    final right = values(b);
+    final count = left.length > right.length ? left.length : right.length;
+    for (var index = 0; index < count; index++) {
+      final first = index < left.length ? left[index] : 0;
+      final second = index < right.length ? right[index] : 0;
+      if (first != second) return first.compareTo(second);
+    }
+    return 0;
   }
 }

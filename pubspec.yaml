@@ -1,5 +1,5 @@
 name: old_permic_ocr_mobile
-description: تطبيق Flutter مفتوح المصدر لتجربة OCR لمحارف البرمية القديمة.
+description: Generic, offline-first Flutter OCR runtime for self-describing model packages.
 publish_to: "none"
 version: 0.1.0+1
 
@@ -10,11 +10,12 @@ dependencies:
   flutter:
     sdk: flutter
   cupertino_icons: ^1.0.8
+  archive: ^3.6.1
   crypto: ^3.0.6
-  connectivity_plus: ^6.1.4
   dio: ^5.8.0+1
   file_picker: ^8.3.7
   image_picker: ^1.1.2
+  image: ^4.3.0
   path_provider: ^2.1.5
   shared_preferences: ^2.5.3
   onnxruntime: ^1.4.1

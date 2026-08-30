@@ -1,19 +1,48 @@
-# ocroldpermic Mobile — Primary Application Repository
+# OCR Runtime for Flutter
 
-ocroldpermic Mobile is the principal mobile application repository for the ocroldpermic commerce product within the ACCSYSTEM ecosystem. It is an active, proprietary product asset and an integral part of the ACCSYSTEM delivery portfolio.
+A clean, offline-first **OCR inference runtime** for self-describing OCR model packages. The repository name reflects its origin, but the application is not coupled to Old Permic or any other alphabet. Language and script knowledge come from the installed package's manifest and alphabet mapping.
 
-## Transparency-Only Visibility
+## Product workflow
 
-The repository's visible content is intentionally limited to its identity and rights notice. This provides transparent confirmation of the product's ownership, position, and governance without releasing application source code, implementation assets, product specifications, integration contracts, customer data, or operational material.
+1. Install an OCR package from a local `.ocrpkg` archive, HTTPS package URL, or HTTPS manifest URL.
+2. Select an image from the gallery or file picker, capture it with the camera, or use a validated remote image URL.
+3. Run local ONNX inference.
+4. Review detections, confidence, Unicode mapping, and model-supplied alternatives.
+5. Correct the editable transcription without overwriting the raw model result.
+6. Export TXT, research JSON, or glyph-level CSV with reproducibility metadata.
 
-The absence of source code from the visible repository must not be interpreted as abandonment, open-source release, public-domain dedication, or permission to independently implement the product. Protected implementation and operational materials remain under ACCSYSTEM control in authorized environments.
+## Architecture
 
-## Portfolio Relationship
+The app preserves a Clean Architecture boundary:
 
-ocroldpermic Mobile is governed as part of the [ACCSYSTEM Ecosystem Delivery Office](https://github.com/users/Emran025/projects/5). Its product and delivery relationship is tracked under the ACCSYSTEM commerce-pilot initiative.
+| Layer | Responsibility |
+| --- | --- |
+| `domain/entities` | Package contract, alphabet, detections, results, reading order |
+| `domain/repositories` | Model catalog, model repository, image/inference ports |
+| `domain/usecases` | OCR execution and text reconstruction |
+| `data/models` | Versioned manifest parsing and compatibility validation |
+| `infrastructure` | HTTP catalog, package storage, secure archive import, ONNX inference, exports |
+| `presentation` | Responsive model/image/run/review workspace and explicit workflow state |
 
-## Rights
+The `OnnxYoloInferenceEngine` is the only component coupled to ONNX Runtime. It can be complemented by future runtime adapters without changing results, model management, or presentation code.
 
-This repository is proprietary and is not open source. Visitors may view and inspect these published transparency documents on the hosting platform only. No permission is granted for copying, downloading, reuse, publication elsewhere, implementation, commercial exploitation, or integration without prior written authorization from ACCSYSTEM.
+## Safety and offline behavior
 
-Please read [`LICENSE`](./LICENSE) for the full proprietary display-only rights notice.
+The model repository verifies SHA-256 digests and declared file sizes, stages downloads in candidate directories, and only switches the active model pointer after validation. Imported archives reject unsafe paths and enforce compressed/extracted size limits. A failed install or update leaves the existing active model untouched.
+
+Once installed, an OCR package and local inference work without an internet connection. Network access is only needed for remote package/image sources and update checks.
+
+## OCR package contract
+
+See [OCR Package Contract v1](docs/OCR_PACKAGE_CONTRACT.md) for the full versioned manifest, package layout, YOLO output requirements, integrity expectations, and reproducible export contents.
+
+## Local development
+
+```bash
+flutter pub get
+flutter analyze
+flutter test
+flutter run
+```
+
+The current inference adapter expects YOLO v8 ONNX models and validates the package-declared input/output contract before use. It does not fabricate OCR results when no compatible model has been installed.
