@@ -47,7 +47,7 @@ def _fbm(
         amplitude *= persistence
         frequency *= 2.0
 
-    result = (result - result.min()) / (result.ptp() + 1e-8)
+    result = (result - result.min()) / ((result.max() - result.min()) + 1e-8)
     return result
 
 
