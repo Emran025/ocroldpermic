@@ -1,127 +1,262 @@
-# Archival Vision Lab
+# Old Permic OCR Lab & Archival Vision Ecosystem
 
-> A generic, offline-first Flutter OCR runtime for traceable manuscript transcription.
+[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/)
+[![Flutter](https://img.shields.io/badge/flutter-3.4+-02569B.svg)](https://flutter.dev/)
+[![YOLOv8/11](https://img.shields.io/badge/YOLO-v8%20%7C%20v11-00FFFF.svg)](https://ultralytics.com)
+[![ONNX Runtime](https://img.shields.io/badge/ONNX-Runtime-005CED.svg)](https://onnxruntime.ai/)
+[![Tests](https://img.shields.io/badge/tests-passing-brightgreen.svg)]()
+[![License](https://img.shields.io/badge/license-MIT-green.svg)]()
 
-**Archival Vision Lab** turns OCR model packages into a reviewable research workflow. It accepts a self-describing OCR package, runs compatible ONNX inference on the device, overlays glyph detections on the source image, reconstructs reading order, and exports both the raw model output and the researcher's corrected transcription.
+An end-to-end historical manuscript OCR pipeline and runtime ecosystem for low-resource and ancient writing systems, demonstrated on **Old Permic (Abur / Anbur)** script.
 
-The application is intentionally **not coupled to one language or writing system**. A package supplies its own alphabet, Unicode mapping, script metadata, preprocessing contract, model artifact, output decoder, and reading direction. The runtime supplies the secure installation, inference, inspection, correction, and export experience.
+The project integrates synthetic manuscript rendering, 12-stage progressive curriculum generation, adaptive YOLO training with automated remediation, Colab-resilient state orchestration, and an offline-first Flutter research runtime powered by ONNX Runtime.
 
-## Project description
+---
 
-Archival Vision Lab is designed for researchers working with historical manuscripts and other specialist writing systems. It treats machine-generated transcription as evidence that must remain visible and reviewable—not as an authoritative reading. Every detected glyph can be inspected with its bounding box, confidence score, Unicode mapping, and model alternatives. Every exported result records the exact package, model, alphabet, thresholds, image dimensions, and inference time used to produce it.
+## 🏛️ System Architecture
 
-The project combines a responsive Material 3 interface with a Clean Architecture core. It can operate offline after a model package has been installed, while still supporting secure package updates and validated remote image inputs when connectivity is available. Its localization approach follows Flutter's generated internationalization model [1], its inference boundary is built around ONNX Runtime [2], and its remote gateway is isolated behind a Dio-backed consumer [3].
+```mermaid
+flowchart TD
+    subgraph S1["Font Assets"]
+        FA["SVG Glyph Collections<br/><code>font/svg/</code><br/>• Handwriting • Anbur • Modern"]
+    end
 
-## Core capabilities
+    subgraph L1["Layer 1: Studio Engine (Python)"]
+        HGS["historical_glyph_studio<br/>• Pure-Python + OpenCV Rasterizer (4× SSAA)<br/>• Procedural Textures (Stone, Parchment, Wood)<br/>• Historical Degradations & Warps<br/>• YOLO BBox Annotations"]
+    end
 
-| Capability | Implementation |
-| --- | --- |
-| Generic script support | Self-describing OCR package manifest with dynamic class-to-Unicode mapping |
-| Local inference | ONNX Runtime adapter with model-declared preprocessing and YOLO v8 decoding |
-| Research review | Source-image overlay, line reconstruction, confidence, alternatives, and glyph inspection |
-| Safe model lifecycle | SHA-256 verification, size limits, safe archive extraction, candidate staging, and atomic activation |
-| Input sources | Gallery, camera, file picker, local `.ocrpkg`, HTTPS package URL, HTTPS manifest URL, and validated image URL |
-| Reproducibility | TXT, research JSON, and glyph-level CSV export with package and runtime metadata |
-| Internationalization | Generated Arabic and English localization catalogs with locale-aware Material widgets |
-| Theming | Centralized light, dark, and reading themes with the Archival Vision Lab olive/paper palette |
+    subgraph L2["Layer 2: Curriculum Engine (Python & Colab)"]
+        HGC["historical_glyph_curriculum<br/>• 12 Progressive Difficulty Stages<br/>• 144 Unique Concept Templates<br/>• Stratified Character Sampling<br/>• Multiprocess Batch Generator"]
+        NB1["notebook/progressive_generation.ipynb<br/>• Colab Dataset Orchestration<br/>• Interactive Approval Gates"]
+    end
 
-## User workflow
+    subgraph L3["Layer 3: Adaptive Training Engine (Python & Colab)"]
+        HGT["historical_glyph_training<br/>• Colab-Resilient Session State<br/>• Leakage-Free Stratified Splitter<br/>• Per-Class Acceptance & Plateau Detection<br/>• Automated Reserve Remediation Loop<br/>• Regression Prevention Testing<br/>• .ocrpkg Release Bundler"]
+        NB2["notebook/adaptive_training.ipynb<br/>• YOLO Curriculum Training Loop<br/>• Auto Checkpointing & Git Sync"]
+    end
 
-1. **Install a package.** Import a local `.ocrpkg` archive or download a package/manifest from an HTTP(S) source.
-2. **Select the source.** Choose a manuscript image from the gallery, camera, file picker, or a validated remote URL.
-3. **Run locally.** Execute ONNX inference on the device using the active package's declared contract.
-4. **Inspect evidence.** Review bounding boxes, class labels, Unicode values, confidence, alternatives, and reconstructed lines.
-5. **Correct carefully.** Edit the transcription while preserving the raw model output separately.
-6. **Export reproducibly.** Save plain text, structured research JSON, or glyph-level CSV for further analysis.
+    subgraph L4["Layer 4: Archival Vision Lab (Flutter App)"]
+        APP["app/ (Flutter Runtime)<br/>• Clean Architecture + ONNX Runtime<br/>• Atomic Model Store (.ocrpkg)<br/>• Interactive Glyph Inspection & BBoxes<br/>• Line Reconstruction & Transcription<br/>• Bilingual UI (English / Arabic)<br/>• Reproducible Research Exports (JSON, CSV, TXT)"]
+    end
 
-## Architecture
+    FA --> HGS
+    HGS --> HGC
+    HGC --> NB1
+    NB1 -->|Synthetic YOLO Datasets| HGT
+    HGT --> NB2
+    NB2 -->|Exported .ocrpkg Packages| APP
+```
 
-The codebase follows a dependency direction that keeps the domain independent from Flutter widgets, Dio, ONNX Runtime, and filesystem details.
+---
 
-| Layer | Responsibility |
-| --- | --- |
-| `lib/domain` | Package entities, OCR results, reading order, ports, and use cases |
-| `lib/data` | Manifest parsing and compatibility validation |
-| `lib/infrastructure` | HTTP catalog, package storage, archive safety, image loading, ONNX inference, and exports |
-| `lib/core/api` | `ApiConsumer` contract, centralized `DioConsumer`, and network error translation |
-| `lib/core/themes` | Light, dark, and reading theme construction |
-| `lib/core/constants` | Product color tokens |
-| `lib/config/localization` | ARB sources, generated localization API, delegates, locales, and message tokens |
-| `lib/presentation` | Responsive workspace UI and explicit OCR workflow state |
+## 📦 Component Breakdown
 
-The presentation and domain layers never need to know how a manifest was hosted. `DioConsumer` centralizes ordinary API requests, while the storage and image adapters use streaming-oriented Dio operations where file transfer semantics are required.
+### 1. Historical Glyph Studio (`lib/historical_glyph_studio`)
+*Layer 1: Physical rendering and degradation simulation*
 
-## Localization and language structure
+- **SVG Rasterization Engine**: Multi-backend rasterizer prioritizing CairoSVG and svglib, with an embedded **pure-Python + OpenCV bezier path parser** and $4\times$ supersampling fallback.
+- **Procedural Manuscript Surfaces**: Procedural generation of realistic physical writing surfaces including aged parchment, stone relief, chiseled wood, plaster, and metal.
+- **Historical Degradation Pipeline**:
+  - Gaussian blur and optical resolution reduction.
+  - Morphological ink erosion and fading.
+  - Discriminative-aware occlusion masking (protecting distinct character strokes).
+  - JPEG compression artifact modeling and noise injection.
+- **Geometric Transformations**: 3D perspective projection, random rotation, affine shear, baseline drift, and non-linear elastic deformations.
 
-All application-visible copy is maintained in ARB catalogs:
+### 2. Historical Glyph Curriculum (`lib/historical_glyph_curriculum`)
+*Layer 2: Progressive dataset generation*
+
+- **12 Progressive Stages**:
+  1. *Stage 01*: Clean Isolated Glyphs (baseline character recognition)
+  2. *Stage 02*: Material Variation (paper, stone, wood, metal)
+  3. *Stage 03*: Controlled Degradation (blur, erosion, fading)
+  4. *Stage 04*: Discriminative-Aware Occlusion
+  5. *Stage 05*: Geometric Variation (rotation & perspective tilts)
+  6. *Stage 06*: Multiple Glyphs & Adjacent Characters
+  7. *Stage 07*: Glyph Groups & Clusters
+  8. *Stage 08*: Continuous Text Lines & Baseline Drift
+  9. *Stage 09*: Multi-Line Text Blocks
+  10. *Stage 10*: Document Structure & Margins
+  11. *Stage 11*: Severe Historical Degradation (manuscript weathering)
+  12. *Stage 12*: Realistic Mixed Historical Scenes
+- **Balanced Character Sampling**: Stratified frequency balancing across Old Permic codepoints ($U+10350$ to $U+1037A$).
+- **Parallel Generation Pipeline**: High-throughput multiprocess generation with progress reporting and checksum verification.
+
+### 3. Adaptive Training Engine (`lib/historical_glyph_training`)
+*Layer 3: YOLO curriculum training, remediation & packaging*
+
+- **Colab-Resilient Session Management** (`TrainingSession`, `StageState`): Automatic checkpointing, interruption recovery, and audit trail (`audit.jsonl`).
+- **Data Splitting & Reserve Pool** (`DatasetSplitter`, `ReservePool`): Stratified 75% train / 15% val / 10% reserve split with zero data leakage across augmentations.
+- **Per-Class Evaluator & Plateau Detection** (`Evaluator`, `PlateauDetector`): Validates individual character AP50 and Recall against strict threshold criteria.
+- **Targeted Remediation Loop** (`RemediationEngine`): Detects weak classes after each stage and performs up to 3 targeted fine-tuning rounds using unused reserve samples without triggering catastrophic forgetting.
+- **Regression Prevention** (`RegressionEvaluator`): Maintains held-out verification subsets across all historical stages to detect performance degradation on earlier scripts.
+- **Release Manager** (`ReleaseManager`): Exports trained YOLO models to optimized ONNX format, generates alphabet metadata, validates against Flutter `manifest.json` schema v1, and packages into `.ocrpkg` ZIP bundles.
+
+### 4. Jupyter & Google Colab Notebooks (`notebook/`)
+
+- **`notebook/progressive_generation.ipynb`**: 16-cell interactive notebook for orchestrating the 12-stage synthetic dataset generation in Google Colab with secure token handling and live visual approval gates.
+- **`notebook/adaptive_training.ipynb`**: 19-cell production training notebook implementing the full adaptive training loop, plateau monitoring, automated remediation, regression checks, and model publishing.
+
+### 5. Archival Vision Lab (`app/`)
+*Layer 4: Generic on-device Flutter OCR runtime*
+
+- **Generic Script Agnostic Core**: Operates on self-describing `.ocrpkg` archives; contains zero hardcoded language assumptions.
+- **On-Device ONNX Inference**: High-performance local inference with model-specified input normalization, letterboxing, and YOLO anchor decoding.
+- **Atomic Package Store**: Secure candidate staging, SHA-256 integrity verification, safe ZIP extraction, and atomic model activation.
+- **Researcher Workspace**: Interactive bounding box review, confidence thresholds, candidate glyph alternatives, and inline transcription correction.
+- **Bilingual Support**: Native English and Arabic localization catalogs with full RTL/LTR layout adaptability.
+- **Reproducible Exports**: Exports plain text (`.txt`), comprehensive research JSON (`.json`), and glyph-level metadata (`.csv`).
+
+---
+
+## 📂 Repository Structure
 
 ```text
-lib/config/localization/
-├── l10n_config.dart
-├── l10n_context.dart
-├── workspace_messages.dart
-└── l10n/
-    ├── app_en.arb
-    ├── app_ar.arb
-    ├── app_localizations.dart
-    ├── app_localizations_en.dart
-    └── app_localizations_ar.dart
+ocr_old_permic/
+├── app/                                # Flutter Archival Vision Lab client application
+│   ├── lib/
+│   │   ├── core/                       # API consumers, themes, tokens
+│   │   ├── config/localization/        # Bilingual AR/EN ARB catalogs & generated code
+│   │   ├── data/                       # Manifest parsing & data models
+│   │   ├── domain/                     # Entities, use cases, ports
+│   │   ├── infrastructure/             # ONNX Runtime, atomic model store, export adapters
+│   │   └── presentation/               # Workspace UI, canvas overlay, review panels
+│   └── test/                           # Flutter unit & contract tests
+├── font/
+│   └── svg/                            # Old Permic raw SVG glyph collections (43 codepoints)
+├── lib/
+│   ├── historical_glyph_studio/        # Layer 1: SVG rendering & surface studio
+│   ├── historical_glyph_curriculum/    # Layer 2: 12-stage progressive dataset generator
+│   └── historical_glyph_training/      # Layer 3: Adaptive YOLO training engine
+├── notebook/
+│   ├── progressive_generation.ipynb    # Colab Layer 2 synthetic dataset generation
+│   └── adaptive_training.ipynb         # Colab Layer 3 adaptive curriculum training
+├── pyproject.toml                      # Python package configuration (v0.3.0)
+└── README.md                           # Master documentation
 ```
 
-English is the template locale and Arabic is supported as a first-class locale. The app registers Flutter's Material, Widgets, Cupertino, and generated application delegates [4]. To add a new language, add an `app_<locale>.arb` catalog, update `L10nConfig.supportedLocales`, and regenerate the typed API:
+---
+
+## 🚀 Quick Start
+
+### 1. Python Environment Setup (Studio & Training)
+
+Requires **Python 3.10+**. We recommend using a Conda or Virtualenv environment:
 
 ```bash
-flutter gen-l10n
+# Clone repository
+git clone https://github.com/Emran025/old-permic-ocr-lab.git
+cd old-permic-ocr-lab
+
+# Install in editable mode with training & rendering dependencies
+pip install -e .
+pip install ultralytics pyyaml svglib opencv-python pytest
 ```
 
-Do not add user-facing text directly to widgets or controllers. Add a message key to both catalogs, regenerate, and access it through `context.l10n` or `WorkspaceMessages`.
-
-## OCR package contract
-
-A package is a ZIP-compatible `.ocrpkg` archive containing a root `manifest.json`, an ONNX model artifact, and an alphabet artifact. The manifest declares model format, input layout, normalization, output tensor layout, box format, coordinates, reading direction, runtime compatibility, file sizes, and SHA-256 digests.
-
-Read the complete [OCR Package Contract v1](docs/OCR_PACKAGE_CONTRACT.md) before producing or distributing a package. The runtime rejects incompatible, malformed, tampered, oversized, or unsafe packages before activation.
-
-## Theme system
-
-The theme structure follows a centralized `AppThemes`/`AppColors` pattern. Three theme types are available:
-
-- **Light:** warm paper surface with olive actions and graphite text.
-- **Dark:** graphite and ink surfaces with accessible paper text.
-- **Reading:** a focused manuscript-reading surface using the warm reading-paper palette.
-
-The palette is based on the deployed OCR lab visual language rather than the teaching application's colors. Widgets consume `ColorScheme` and theme tokens instead of embedding product colors.
-
-## Development
-
-### Requirements
-
-- Flutter stable with Dart 3.4 or newer.
-- A platform toolchain for the target device.
-- A compatible ONNX Runtime platform configuration for device builds.
-
-### Commands
+Run Python test suites:
 
 ```bash
+# Test Historical Glyph Studio
+pytest lib/historical_glyph_studio/tests/ -v
+
+# Test Curriculum Generator
+pytest lib/historical_glyph_curriculum/tests/ -v
+
+# Test Adaptive Training Engine (25/25 unit tests)
+pytest lib/historical_glyph_training/tests/ -v
+```
+
+### 2. Running Dataset Generation & Training
+
+Open the notebooks directly in Google Colab or your local Jupyter environment:
+
+1. **Generate Dataset**: Open [`notebook/progressive_generation.ipynb`](notebook/progressive_generation.ipynb) to generate synthetic dataset stages.
+2. **Train Model**: Open [`notebook/adaptive_training.ipynb`](notebook/adaptive_training.ipynb) to execute the curriculum training and package `.ocrpkg` models.
+
+### 3. Flutter Application (Archival Vision Lab)
+
+Requires **Flutter 3.4+**:
+
+```bash
+cd app
+
+# Fetch dependencies & generate localization
 flutter pub get
 flutter gen-l10n
-flutter analyze
+
+# Run test suite
 flutter test
+
+# Run application
 flutter run
 ```
 
-The test suite covers manifest parsing, runtime compatibility, alphabet mapping, reading order, YOLO decoding and suppression, mocked OCR execution, localization generation, and the primary workspace shell.
+---
 
-## Engineering principles
+## 📜 OCR Package Specification (`.ocrpkg`)
 
-The runtime does not fabricate OCR output when no compatible package is installed. It keeps raw output separate from corrected text, verifies artifacts before activation, preserves the active package during failed updates, and records enough metadata to reproduce an exported result. These constraints are deliberate: an OCR suggestion should be inspectable, reversible, and attributable.
+The Flutter runtime consumes model packages packaged as ZIP archives containing:
 
-## References
+```text
+package.ocrpkg (ZIP)
+├── manifest.json            # Model contract, input/output specs, SHA-256
+├── model/
+│   └── model.onnx          # Quantized/exported ONNX model artifact
+└── alphabet/
+    └── alphabet.json       # Class index to Unicode & glyph metadata mapping
+```
 
-[1]: https://docs.flutter.dev/ui/accessibility-and-internationalization/internationalization "Flutter internationalization documentation"
+### Example `manifest.json` (Schema v1)
 
-[2]: https://onnxruntime.ai/docs/get-started/with-javascript.html "ONNX Runtime documentation"
+```json
+{
+  "schema_version": 1,
+  "package_id": "old-permic-stage-12",
+  "version": "1.0.0",
+  "model_format": "onnx",
+  "model": {
+    "id": "yolo11n_stage12",
+    "path": "model/model.onnx",
+    "bytes": 12450816,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "alphabet": {
+    "version": "1.0",
+    "classes": [
+      { "id": 0, "unicode": "U+10350", "character": "𐍐", "name": "ANBUR LETTER AN" },
+      { "id": 1, "unicode": "U+10351", "character": "𐍑", "name": "ANBUR LETTER BUR" }
+    ]
+  },
+  "input": {
+    "width": 640,
+    "height": 640,
+    "layout": "nchw",
+    "channels": 3,
+    "normalization": "zero_to_one",
+    "letterbox": true,
+    "pad_color": 114
+  },
+  "output": {
+    "decoder": "yolo_v8",
+    "layout": "channels_first",
+    "box_format": "xywh",
+    "coordinates": "pixels",
+    "has_objectness": false
+  }
+}
+```
 
-[3]: https://pub.dev/packages/dio "Dio package documentation"
+---
 
-[4]: https://pub.dev/packages/flutter_localizations "Flutter localizations package"
+## 🔬 Reproducibility & Research Integrity
+
+1. **Traceable Annotations**: Every prediction includes confidence, IoU suppression context, and alternative class probabilities.
+2. **Immutable Raw Predictions**: The runtime never overwrites raw model output with human corrections; both layers are preserved side-by-side in exports.
+3. **Audit Trail**: Every training epoch, remediation round, and regression score is logged deterministically to `audit.jsonl`.
+4. **Offline Guarantees**: Once installed, models execute entirely on-device with zero external telemetry or cloud dependency.
+
+---
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
