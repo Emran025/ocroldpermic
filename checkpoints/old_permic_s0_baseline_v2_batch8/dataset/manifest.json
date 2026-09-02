@@ -1,0 +1,43 @@
+{
+  "kind": "synthetic-old-permic-character-detection",
+  "layout": "isolated-glyph",
+  "profile": {
+    "name": "unicode-clean",
+    "rotation_degrees": 0.0,
+    "blur_radius": 0.0,
+    "noise_strength": 0,
+    "ink_jitter": 0,
+    "line_gap": 12,
+    "background": [
+      250,
+      247,
+      238
+    ],
+    "ink": [
+      36,
+      48,
+      41
+    ],
+    "isolated_glyph_extent": 0.8,
+    "isolated_center_jitter": 0,
+    "background_fragment_count": 0,
+    "background_fragment_delta": 0
+  },
+  "seed": 10350,
+  "samples": 7600,
+  "image_size": 640,
+  "font_size": 48,
+  "font": "/content/old-permic-ocr-lab/training/assets/NotoSansOldPermic-Regular.ttf",
+  "font_sha256": "f2eb57a47f62d490cb8a5efab95124f15b8941968cb03af780b939bae3b73006",
+  "class_count": 38,
+  "split_counts": {
+    "train": 6080,
+    "val": 760,
+    "test": 760
+  },
+  "class_balance_policy": "cyclic-per-split",
+  "generation_workers": 6,
+  "lineage_manifest": "assets.jsonl",
+  "real_manuscripts_included": false,
+  "notes": "Synthetic character-detection data from a font. It contains no historical manuscript pixels and does not prove palaeographic OCR performance."
+}

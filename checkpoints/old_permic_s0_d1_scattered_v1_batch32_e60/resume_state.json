@@ -1,0 +1,51 @@
+{
+  "schema_version": 2,
+  "experiment_name": "old_permic_s0_d1_scattered_v1_batch32_e60",
+  "stage": "S0-d1",
+  "class_map_sha256": "4e4dcdf82e054b7beb03d80d81560cf42ee0e4902ed4b64a31e5ac5fd977640b",
+  "manifest_sha256": "c91cb9d84c13bbc5c1c39109688ede79cce7a7e8e3d3638036903f7ca0ac0d41",
+  "assets_sha256": "4d3be5c88f661d41656502894e50adaefab2a4c38d3404fb0c50603cbf62960e",
+  "model_yaml": "yolov8n.yaml",
+  "initialization": "warm_start_from_S0",
+  "initialization_spec": {
+    "source_stage": "S0",
+    "source_experiment": "old_permic_s0_baseline_v2_batch8",
+    "source_branch": "s0-epoch100-checkpoint",
+    "required_epochs": 100,
+    "expected_last_pt_sha256": "db7ce494805f3c49505e30736eaec086c49f919b4192ad752c67c14c8a445bb2"
+  },
+  "last_pt_sha256": "ac7a2f558352fe9637172c00ee16c916c3e4cc06464ab14ca88f1ece4112050d",
+  "initialization_weight_sha256": null,
+  "saved_after_epoch": 60,
+  "saved_at_utc": "2026-08-22T04:59:53.658692+00:00",
+  "dataset_snapshot": {
+    "schema_version": 2,
+    "identity": {
+      "schema_version": 2,
+      "experiment_name": "old_permic_s0_d1_baseline_v2_batch8",
+      "stage": "S0-d1",
+      "generation": {
+        "profile": "controlled-deformation",
+        "layout": "scattered-glyph",
+        "samples": 7600,
+        "seed": 20350,
+        "image_size": 448,
+        "font_size": 36,
+        "balanced_classes": true,
+        "workers": 6,
+        "image_format": "jpeg",
+        "jpeg_quality": 70
+      },
+      "font_sha256": "f2eb57a47f62d490cb8a5efab95124f15b8941968cb03af780b939bae3b73006",
+      "generator_sha256": "c06fc62220eab4a55c9a706ad7d1cdb8bd7dc555a181c4ce67a47ebfb80533be"
+    },
+    "tree": {
+      "file_count": 15205,
+      "bytes": 150533395
+    },
+    "manifest_sha256": "c91cb9d84c13bbc5c1c39109688ede79cce7a7e8e3d3638036903f7ca0ac0d41",
+    "class_map_sha256": "4e4dcdf82e054b7beb03d80d81560cf42ee0e4902ed4b64a31e5ac5fd977640b",
+    "assets_sha256": "4d3be5c88f661d41656502894e50adaefab2a4c38d3404fb0c50603cbf62960e",
+    "created_at_utc": "2026-08-22T01:17:51.325623+00:00"
+  }
+}

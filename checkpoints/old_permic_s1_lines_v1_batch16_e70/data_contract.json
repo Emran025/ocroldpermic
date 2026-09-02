@@ -1,0 +1,30 @@
+{
+  "contract_version": 1,
+  "kind": "old-permic-character-detection",
+  "source_commit": "453cfc643433b24a3753a9270b165a3a2d54201a",
+  "stage": "S1",
+  "dataset_root": "/content/old-permic-ocr-workspace/synthetic/S1",
+  "class_map_sha256": "4e4dcdf82e054b7beb03d80d81560cf42ee0e4902ed4b64a31e5ac5fd977640b",
+  "manifest_sha256": "091a07774b4265f6f34e3384eab74989e085fbe285837942cd8a67f47018bffb",
+  "assets_sha256": "7c50fd60c405812e6a369575512f66e6d2b1d32dba1f45ae6b8f80de87bbac9c",
+  "font_sha256": "f2eb57a47f62d490cb8a5efab95124f15b8941968cb03af780b939bae3b73006",
+  "class_count": 38,
+  "splits": {
+    "train": {
+      "images": 800,
+      "labels": 800,
+      "boxes": 21555
+    },
+    "val": {
+      "images": 100,
+      "labels": 100,
+      "boxes": 2749
+    },
+    "test": {
+      "images": 100,
+      "labels": 100,
+      "boxes": 2735
+    }
+  },
+  "real_manuscripts_included": false
+}

@@ -1,0 +1,272 @@
+{
+  "classes": [
+    {
+      "id": 0,
+      "label": "𐍐",
+      "glyph": "𐍐",
+      "codepoint": "U+10350",
+      "unicode_name": "OLD PERMIC LETTER AN"
+    },
+    {
+      "id": 1,
+      "label": "𐍑",
+      "glyph": "𐍑",
+      "codepoint": "U+10351",
+      "unicode_name": "OLD PERMIC LETTER BUR"
+    },
+    {
+      "id": 2,
+      "label": "𐍒",
+      "glyph": "𐍒",
+      "codepoint": "U+10352",
+      "unicode_name": "OLD PERMIC LETTER GAI"
+    },
+    {
+      "id": 3,
+      "label": "𐍓",
+      "glyph": "𐍓",
+      "codepoint": "U+10353",
+      "unicode_name": "OLD PERMIC LETTER DOI"
+    },
+    {
+      "id": 4,
+      "label": "𐍔",
+      "glyph": "𐍔",
+      "codepoint": "U+10354",
+      "unicode_name": "OLD PERMIC LETTER E"
+    },
+    {
+      "id": 5,
+      "label": "𐍕",
+      "glyph": "𐍕",
+      "codepoint": "U+10355",
+      "unicode_name": "OLD PERMIC LETTER ZHOI"
+    },
+    {
+      "id": 6,
+      "label": "𐍖",
+      "glyph": "𐍖",
+      "codepoint": "U+10356",
+      "unicode_name": "OLD PERMIC LETTER DZHOI"
+    },
+    {
+      "id": 7,
+      "label": "𐍗",
+      "glyph": "𐍗",
+      "codepoint": "U+10357",
+      "unicode_name": "OLD PERMIC LETTER ZATA"
+    },
+    {
+      "id": 8,
+      "label": "𐍘",
+      "glyph": "𐍘",
+      "codepoint": "U+10358",
+      "unicode_name": "OLD PERMIC LETTER DZITA"
+    },
+    {
+      "id": 9,
+      "label": "𐍙",
+      "glyph": "𐍙",
+      "codepoint": "U+10359",
+      "unicode_name": "OLD PERMIC LETTER I"
+    },
+    {
+      "id": 10,
+      "label": "𐍚",
+      "glyph": "𐍚",
+      "codepoint": "U+1035A",
+      "unicode_name": "OLD PERMIC LETTER KOKE"
+    },
+    {
+      "id": 11,
+      "label": "𐍛",
+      "glyph": "𐍛",
+      "codepoint": "U+1035B",
+      "unicode_name": "OLD PERMIC LETTER LEI"
+    },
+    {
+      "id": 12,
+      "label": "𐍜",
+      "glyph": "𐍜",
+      "codepoint": "U+1035C",
+      "unicode_name": "OLD PERMIC LETTER MENOE"
+    },
+    {
+      "id": 13,
+      "label": "𐍝",
+      "glyph": "𐍝",
+      "codepoint": "U+1035D",
+      "unicode_name": "OLD PERMIC LETTER NENOE"
+    },
+    {
+      "id": 14,
+      "label": "𐍞",
+      "glyph": "𐍞",
+      "codepoint": "U+1035E",
+      "unicode_name": "OLD PERMIC LETTER VOOI"
+    },
+    {
+      "id": 15,
+      "label": "𐍟",
+      "glyph": "𐍟",
+      "codepoint": "U+1035F",
+      "unicode_name": "OLD PERMIC LETTER PEEI"
+    },
+    {
+      "id": 16,
+      "label": "𐍠",
+      "glyph": "𐍠",
+      "codepoint": "U+10360",
+      "unicode_name": "OLD PERMIC LETTER REI"
+    },
+    {
+      "id": 17,
+      "label": "𐍡",
+      "glyph": "𐍡",
+      "codepoint": "U+10361",
+      "unicode_name": "OLD PERMIC LETTER SII"
+    },
+    {
+      "id": 18,
+      "label": "𐍢",
+      "glyph": "𐍢",
+      "codepoint": "U+10362",
+      "unicode_name": "OLD PERMIC LETTER TAI"
+    },
+    {
+      "id": 19,
+      "label": "𐍣",
+      "glyph": "𐍣",
+      "codepoint": "U+10363",
+      "unicode_name": "OLD PERMIC LETTER U"
+    },
+    {
+      "id": 20,
+      "label": "𐍤",
+      "glyph": "𐍤",
+      "codepoint": "U+10364",
+      "unicode_name": "OLD PERMIC LETTER CHERY"
+    },
+    {
+      "id": 21,
+      "label": "𐍥",
+      "glyph": "𐍥",
+      "codepoint": "U+10365",
+      "unicode_name": "OLD PERMIC LETTER SHOOI"
+    },
+    {
+      "id": 22,
+      "label": "𐍦",
+      "glyph": "𐍦",
+      "codepoint": "U+10366",
+      "unicode_name": "OLD PERMIC LETTER SHCHOOI"
+    },
+    {
+      "id": 23,
+      "label": "𐍧",
+      "glyph": "𐍧",
+      "codepoint": "U+10367",
+      "unicode_name": "OLD PERMIC LETTER YRY"
+    },
+    {
+      "id": 24,
+      "label": "𐍨",
+      "glyph": "𐍨",
+      "codepoint": "U+10368",
+      "unicode_name": "OLD PERMIC LETTER YERU"
+    },
+    {
+      "id": 25,
+      "label": "𐍩",
+      "glyph": "𐍩",
+      "codepoint": "U+10369",
+      "unicode_name": "OLD PERMIC LETTER O"
+    },
+    {
+      "id": 26,
+      "label": "𐍪",
+      "glyph": "𐍪",
+      "codepoint": "U+1036A",
+      "unicode_name": "OLD PERMIC LETTER OO"
+    },
+    {
+      "id": 27,
+      "label": "𐍫",
+      "glyph": "𐍫",
+      "codepoint": "U+1036B",
+      "unicode_name": "OLD PERMIC LETTER EF"
+    },
+    {
+      "id": 28,
+      "label": "𐍬",
+      "glyph": "𐍬",
+      "codepoint": "U+1036C",
+      "unicode_name": "OLD PERMIC LETTER HA"
+    },
+    {
+      "id": 29,
+      "label": "𐍭",
+      "glyph": "𐍭",
+      "codepoint": "U+1036D",
+      "unicode_name": "OLD PERMIC LETTER TSIU"
+    },
+    {
+      "id": 30,
+      "label": "𐍮",
+      "glyph": "𐍮",
+      "codepoint": "U+1036E",
+      "unicode_name": "OLD PERMIC LETTER VER"
+    },
+    {
+      "id": 31,
+      "label": "𐍯",
+      "glyph": "𐍯",
+      "codepoint": "U+1036F",
+      "unicode_name": "OLD PERMIC LETTER YER"
+    },
+    {
+      "id": 32,
+      "label": "𐍰",
+      "glyph": "𐍰",
+      "codepoint": "U+10370",
+      "unicode_name": "OLD PERMIC LETTER YERI"
+    },
+    {
+      "id": 33,
+      "label": "𐍱",
+      "glyph": "𐍱",
+      "codepoint": "U+10371",
+      "unicode_name": "OLD PERMIC LETTER YAT"
+    },
+    {
+      "id": 34,
+      "label": "𐍲",
+      "glyph": "𐍲",
+      "codepoint": "U+10372",
+      "unicode_name": "OLD PERMIC LETTER IE"
+    },
+    {
+      "id": 35,
+      "label": "𐍳",
+      "glyph": "𐍳",
+      "codepoint": "U+10373",
+      "unicode_name": "OLD PERMIC LETTER YU"
+    },
+    {
+      "id": 36,
+      "label": "𐍴",
+      "glyph": "𐍴",
+      "codepoint": "U+10374",
+      "unicode_name": "OLD PERMIC LETTER YA"
+    },
+    {
+      "id": 37,
+      "label": "𐍵",
+      "glyph": "𐍵",
+      "codepoint": "U+10375",
+      "unicode_name": "OLD PERMIC LETTER IA"
+    }
+  ],
+  "source": "Unicode Old Permic base-letter assignments",
+  "synthetic": true
+}

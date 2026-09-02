@@ -1,0 +1,49 @@
+{
+  "schema_version": 2,
+  "experiment_name": "old_permic_s2_pages_v1_batch12_e80",
+  "stage": "S2",
+  "class_map_sha256": "4e4dcdf82e054b7beb03d80d81560cf42ee0e4902ed4b64a31e5ac5fd977640b",
+  "manifest_sha256": "20f79ad2e6801f672a7de5742183869d065bd8bb4e67465cc8284f08df53e821",
+  "assets_sha256": "231878cb1617538cbeda0ae8475397de8493229453b4af81328222802b00c21a",
+  "model_yaml": "yolov8n.yaml",
+  "initialization": "warm_start_from_S1",
+  "initialization_spec": {
+    "source_stage": "S1",
+    "source_experiment": "old_permic_s1_lines_v1_batch16_e70",
+    "source_branch": "colab-checkpoints",
+    "required_epochs": 70,
+    "expected_last_pt_sha256": null
+  },
+  "last_pt_sha256": "21e7a3d338d9e74460695226cd91e88a94177b420644bc514f3b6dafbd059cf5",
+  "initialization_weight_sha256": "880b60f627d9ea4252a67fd3163350f850a82bee15e750ecfef263ee956205f0",
+  "saved_after_epoch": 80,
+  "saved_at_utc": "2026-08-22T08:13:46.623700+00:00",
+  "dataset_snapshot": {
+    "schema_version": 2,
+    "identity": {
+      "schema_version": 2,
+      "experiment_name": "old_permic_s2_baseline_v2_batch8",
+      "stage": "S2",
+      "generation": {
+        "profile": "manuscript-inspired",
+        "layout": "structured-pages",
+        "samples": 600,
+        "seed": 40350,
+        "image_size": 640,
+        "font_size": 28,
+        "balanced_classes": false,
+        "workers": 2
+      },
+      "font_sha256": "f2eb57a47f62d490cb8a5efab95124f15b8941968cb03af780b939bae3b73006",
+      "generator_sha256": "c06fc62220eab4a55c9a706ad7d1cdb8bd7dc555a181c4ce67a47ebfb80533be"
+    },
+    "tree": {
+      "file_count": 1205,
+      "bytes": 272480339
+    },
+    "manifest_sha256": "20f79ad2e6801f672a7de5742183869d065bd8bb4e67465cc8284f08df53e821",
+    "class_map_sha256": "4e4dcdf82e054b7beb03d80d81560cf42ee0e4902ed4b64a31e5ac5fd977640b",
+    "assets_sha256": "231878cb1617538cbeda0ae8475397de8493229453b4af81328222802b00c21a",
+    "created_at_utc": "2026-08-22T07:35:10.101745+00:00"
+  }
+}

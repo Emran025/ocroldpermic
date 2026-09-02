@@ -1,0 +1,28 @@
+{
+  "schema_version": 2,
+  "identity": {
+    "schema_version": 2,
+    "experiment_name": "old_permic_s0_baseline_v2_batch8",
+    "stage": "S0",
+    "generation": {
+      "profile": "unicode-clean",
+      "layout": "isolated-glyph",
+      "samples": 7600,
+      "seed": 10350,
+      "image_size": 640,
+      "font_size": 48,
+      "balanced_classes": true,
+      "workers": 6
+    },
+    "font_sha256": "f2eb57a47f62d490cb8a5efab95124f15b8941968cb03af780b939bae3b73006",
+    "generator_sha256": "ddafde84f60c6023ecfe97dadae4b933582b2fa296128b46b947a1bfd1d12155"
+  },
+  "tree": {
+    "file_count": 15205,
+    "bytes": 87148829
+  },
+  "manifest_sha256": "44ff520f97ab9043de73e3eeab56d01e821bf4b115227e09206706e4a7161a22",
+  "class_map_sha256": "4e4dcdf82e054b7beb03d80d81560cf42ee0e4902ed4b64a31e5ac5fd977640b",
+  "assets_sha256": "c07ecff0e672c1c3ad5b8b21614436506aa003d50f9e5d28dbb8f5228f8d8080",
+  "created_at_utc": "2026-08-21T22:32:21.235489+00:00"
+}
