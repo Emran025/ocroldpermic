@@ -24,6 +24,11 @@ class StageManifest:
     generation_time_seconds: float
     concept_summaries: List[dict] = field(default_factory=list)
 
+    @property
+    def total_samples(self) -> int:
+        """Alias for total_images."""
+        return self.total_images
+
     def to_dict(self) -> dict:
         d = asdict(self)
         d["class_distribution"] = {str(k): v for k, v in self.class_distribution.items()}
@@ -54,45 +59,53 @@ def load_stage_manifest(manifest_path: Path) -> StageManifest:
 
 
 def build_master_manifest(
-    stage_manifests: List[StageManifest],
-    output_path: Path,
+    stage_manifests: List[StageManifest | dict],
+    output_path: Path | str | None = None,
 ) -> dict:
     """
-    Combine all stage manifests into a single master_manifest.json.
+    Combine all stage manifests into a single master manifest dictionary.
 
     Returns
     -------
     dict
         The master manifest data structure.
     """
-    total_images = sum(m.total_images for m in stage_manifests)
-    total_annotations = sum(sum(m.class_distribution.values()) for m in stage_manifests)
+    manifest_objs: List[StageManifest] = []
+    for sm in stage_manifests:
+        if isinstance(sm, dict):
+            manifest_objs.append(StageManifest.from_dict(sm))
+        else:
+            manifest_objs.append(sm)
+
+    total_images = sum(m.total_images for m in manifest_objs)
+    total_annotations = sum(sum(m.class_distribution.values()) for m in manifest_objs)
 
     # Aggregate class distribution
     all_classes: Dict[int, int] = {}
-    for m in stage_manifests:
+    for m in manifest_objs:
         for cls_id, cnt in m.class_distribution.items():
             all_classes[cls_id] = all_classes.get(cls_id, 0) + cnt
 
-    all_families = sorted(set(f for m in stage_manifests for f in m.families_used))
-    all_materials = sorted(set(mat for m in stage_manifests for mat in m.materials_used))
-    all_commits = [m.commit_hash for m in stage_manifests if m.commit_hash]
+    all_families = sorted(set(f for m in manifest_objs for f in m.families_used))
+    all_materials = sorted(set(mat for m in manifest_objs for mat in m.materials_used))
+    all_commits = [m.commit_hash for m in manifest_objs if m.commit_hash]
 
     master = {
         "version": "1.0",
         "total_images": total_images,
         "total_annotations": total_annotations,
         "total_classes": len(all_classes),
-        "n_stages": len(stage_manifests),
+        "n_stages": len(manifest_objs),
         "all_families": all_families,
         "all_materials": all_materials,
         "commit_hashes": all_commits,
         "class_distribution": {str(k): v for k, v in sorted(all_classes.items())},
-        "stages": [m.to_dict() for m in stage_manifests],
-        "generation_total_seconds": sum(m.generation_time_seconds for m in stage_manifests),
+        "stages": [m.to_dict() for m in manifest_objs],
+        "generation_total_seconds": sum(m.generation_time_seconds for m in manifest_objs),
     }
 
-    output_path = Path(output_path)
-    output_path.parent.mkdir(parents=True, exist_ok=True)
-    output_path.write_text(json.dumps(master, indent=2, ensure_ascii=False), encoding="utf-8")
+    if output_path is not None:
+        p = Path(output_path)
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text(json.dumps(master, indent=2, ensure_ascii=False), encoding="utf-8")
     return master

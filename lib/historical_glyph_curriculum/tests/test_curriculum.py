@@ -79,9 +79,26 @@ def test_generation_plan():
 def test_resource_detection():
     profile = detect_resources()
     assert profile.cpu_count >= 1
+    assert profile.gpu_vram_gb == profile.gpu_memory_gb
+
+    # Tuple unpacking
     w, b = auto_tune(profile)
     assert w >= 1
     assert b >= 1
+
+    # Named attributes and mode support
+    tuned_med = auto_tune(profile, "medium")
+    assert tuned_med.workers >= 1
+    assert tuned_med.batch_size >= 1
+
+    tuned_dev = auto_tune(profile, "dev")
+    assert tuned_dev.workers >= 1
+    assert tuned_dev.batch_size >= 1
+
+    # Explicit overrides
+    tuned_custom = auto_tune(profile, override_workers=3, override_batch=16)
+    assert tuned_custom.workers == 3
+    assert tuned_custom.batch_size == 16
 
 def test_validation_report(tmp_path):
     img_dir = tmp_path / "images"
