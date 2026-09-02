@@ -1,0 +1,68 @@
+{
+  "schema_version": 1,
+  "release_id": "old_permic_s2_pages_v1_batch12_e80-20260822T081700Z",
+  "created_at_utc": "2026-08-22T08:17:00.359389+00:00",
+  "publication_status": "published",
+  "source_commit": "453cfc643433b24a3753a9270b165a3a2d54201a",
+  "model_scope": "synthetic-old-permic-character-baseline",
+  "real_manuscript_ocr_validated": false,
+  "metrics_file": "metrics.json",
+  "data_contract_file": "data_contract.json",
+  "class_map_file": "class_map.json",
+  "assets": [
+    {
+      "path": "metrics.json",
+      "kind": "metrics",
+      "sha256": "1f1169bc9880c1aa1cad4ab8e2918472eea05b872dc1935b90228afe043b5fc6",
+      "bytes": 1563
+    },
+    {
+      "path": "data_contract.json",
+      "kind": "data_contract",
+      "sha256": "6ec7d8398b2dd8f3522b6584cd9303ddbef3e3aa5ea5e1db84e3c88db3e7b27c",
+      "bytes": 893
+    },
+    {
+      "path": "class_map.json",
+      "kind": "class_map",
+      "sha256": "4e4dcdf82e054b7beb03d80d81560cf42ee0e4902ed4b64a31e5ac5fd977640b",
+      "bytes": 5836
+    },
+    {
+      "path": "previews/results.png",
+      "kind": "preview",
+      "sha256": "b3a3699470096b92f10fda009770161684d09fd32874724eeab64ab24aa564f9",
+      "bytes": 334350
+    },
+    {
+      "path": "previews/confusion_matrix.png",
+      "kind": "preview",
+      "sha256": "0b91d381321048150a0b163d20ea8829e69f75841d4e7644da35630be33ecdf8",
+      "bytes": 75119
+    },
+    {
+      "path": "weights/best.pt",
+      "kind": "pytorch_weight",
+      "sha256": "1da5973e7711e566601701634a011f82745c84a88c514fde170610a9cf88ae46",
+      "bytes": 6335210
+    },
+    {
+      "path": "weights/best.onnx",
+      "kind": "onnx_weight",
+      "sha256": "e036100ad23d17ae96fb830160e38d62b2f8747d849c4c4f3b23cba52d0b7fc0",
+      "bytes": 12504609
+    }
+  ],
+  "required_before_web_inference": [
+    "matching_class_map",
+    "server-side_weight_loading",
+    "integration_test"
+  ],
+  "published_at_utc": "2026-08-22T08:17:10.770901+00:00",
+  "web_weight": {
+    "path": "weights/best.pt",
+    "kind": "pytorch_weight",
+    "sha256": "1da5973e7711e566601701634a011f82745c84a88c514fde170610a9cf88ae46",
+    "bytes": 6335210
+  }
+}

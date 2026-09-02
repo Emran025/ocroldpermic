@@ -1,0 +1,47 @@
+{
+  "schema_version": 1,
+  "experiment_name": "old_permic_s2_pages_v1_batch12_e80",
+  "evaluated_at_utc": "2026-08-22T08:16:55.060344+00:00",
+  "dataset_contract": {
+    "contract_version": 1,
+    "kind": "old-permic-character-detection",
+    "source_commit": "453cfc643433b24a3753a9270b165a3a2d54201a",
+    "stage": "S2",
+    "dataset_root": "/content/old-permic-ocr-workspace/synthetic/S2",
+    "class_map_sha256": "4e4dcdf82e054b7beb03d80d81560cf42ee0e4902ed4b64a31e5ac5fd977640b",
+    "manifest_sha256": "20f79ad2e6801f672a7de5742183869d065bd8bb4e67465cc8284f08df53e821",
+    "assets_sha256": "231878cb1617538cbeda0ae8475397de8493229453b4af81328222802b00c21a",
+    "font_sha256": "f2eb57a47f62d490cb8a5efab95124f15b8941968cb03af780b939bae3b73006",
+    "class_count": 38,
+    "splits": {
+      "train": {
+        "images": 480,
+        "labels": 480,
+        "boxes": 24122
+      },
+      "val": {
+        "images": 60,
+        "labels": 60,
+        "boxes": 3047
+      },
+      "test": {
+        "images": 60,
+        "labels": 60,
+        "boxes": 2998
+      }
+    },
+    "real_manuscripts_included": false
+  },
+  "weights": {
+    "best_pt_sha256": "1da5973e7711e566601701634a011f82745c84a88c514fde170610a9cf88ae46",
+    "best_pt_bytes": 6335210
+  },
+  "test_metrics": {
+    "map50_95": 0.7379638833516968,
+    "map50": 0.9949999999999997,
+    "map75": 0.9376974813172126,
+    "precision": 0.9982139103835894,
+    "recall": 0.9994971793016921
+  },
+  "interpretation": "synthetic baseline only; it is not an OCR claim for historical Old Permic manuscripts."
+}
