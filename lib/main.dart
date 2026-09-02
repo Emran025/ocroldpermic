@@ -1,122 +1,89 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+import 'application/composition.dart';
+import 'application/model_update.dart';
 
-void main() {
-  runApp(const MyApp());
+void main() => runApp(const OldPermicApp());
+
+class OldPermicApp extends StatefulWidget {
+  const OldPermicApp({super.key, this.initialUpdateCheck = true});
+  final bool initialUpdateCheck;
+  @override State<OldPermicApp> createState() => _OldPermicAppState();
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
-
-  // This widget is the root of your application.
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Flutter Demo',
-      theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // TRY THIS: Try running your application with "flutter run". You'll see
-        // the application has a purple toolbar. Then, without quitting the app,
-        // try changing the seedColor in the colorScheme below to Colors.green
-        // and then invoke "hot reload" (save your changes or press the "hot
-        // reload" button in a Flutter-supported IDE, or press "r" if you used
-        // the command line to start the app).
-        //
-        // Notice that the counter didn't reset back to zero; the application
-        // state is not lost during the reload. To reset the state, use hot
-        // restart instead.
-        //
-        // This works for code too, not just values: Most code changes can be
-        // tested with just a hot reload.
-        colorScheme: .fromSeed(seedColor: Colors.deepPurple),
-      ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
-    );
-  }
+class _OldPermicAppState extends State<OldPermicApp> {
+  ThemeMode mode = ThemeMode.system;
+  final dependencies = AppDependencies.create();
+  @override Widget build(BuildContext context) => MaterialApp(
+    debugShowCheckedModeBanner: false,
+    title: 'مختبر OCR للبرمية القديمة',
+    themeMode: mode,
+    theme: ThemeData(colorSchemeSeed: const Color(0xffb67a18), brightness: Brightness.light, useMaterial3: true, fontFamily: 'sans'),
+    darkTheme: ThemeData(colorSchemeSeed: const Color(0xffd7a548), brightness: Brightness.dark, useMaterial3: true, fontFamily: 'sans'),
+    home: TrialPage(dependencies: dependencies, initialUpdateCheck: widget.initialUpdateCheck, onToggleTheme: () => setState(() => mode = mode == ThemeMode.dark ? ThemeMode.light : ThemeMode.dark)),
+  );
 }
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
-
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
-
-  final String title;
-
-  @override
-  State<MyHomePage> createState() => _MyHomePageState();
+class TrialPage extends StatefulWidget {
+  const TrialPage({super.key, required this.dependencies, required this.onToggleTheme, this.initialUpdateCheck = true});
+  final AppDependencies dependencies;
+  final bool initialUpdateCheck;
+  final VoidCallback onToggleTheme;
+  @override State<TrialPage> createState() => _TrialPageState();
 }
 
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
+class _TrialPageState extends State<TrialPage> {
+  XFile? image;
+  UpdateState updateState = const UpdateOffline();
+  String? error;
+  final picker = ImagePicker();
 
-  void _incrementCounter() {
-    setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
-    });
+  Future<void> checkUpdate({bool manual = true}) async {
+    setState(() { error = null; updateState = const UpdateChecking(); });
+    final state = await widget.dependencies.updates.check(manual: manual);
+    if (mounted) setState(() => updateState = state);
   }
-
-  @override
-  Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
-    return Scaffold(
-      appBar: AppBar(
-        // TRY THIS: Try changing the color here to a specific color (to
-        // Colors.amber, perhaps?) and trigger a hot reload to see the AppBar
-        // change color while the other colors stay the same.
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
-      ),
-      body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
-        child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          //
-          // TRY THIS: Invoke "debug painting" (choose the "Toggle Debug Paint"
-          // action in the IDE, or press "p" in the console), to see the
-          // wireframe for each widget.
-          mainAxisAlignment: .center,
-          children: [
-            const Text('You have pushed the button this many times:'),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
-          ],
-        ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
-      ),
-    );
+  Future<void> choose(ImageSource source) async {
+    final picked = await picker.pickImage(source: source, imageQuality: 100);
+    if (picked != null && mounted) setState(() { image = picked; error = null; });
   }
+  @override void initState() { super.initState(); if (widget.initialUpdateCheck) WidgetsBinding.instance.addPostFrameCallback((_) => checkUpdate(manual: false)); }
+  @override Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    return Directionality(textDirection: TextDirection.rtl, child: Scaffold(
+      appBar: AppBar(title: const Text('مختبر البرمية القديمة'), actions: [IconButton(onPressed: widget.onToggleTheme, icon: const Icon(Icons.dark_mode_outlined), tooltip: 'تبديل المظهر')]),
+      drawer: Drawer(child: SafeArea(child: ListView(padding: const EdgeInsets.all(20), children: [
+        Text('Old Permic OCR', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
+        const SizedBox(height: 8), const Text('تجربة محلية حرفية، لا ترجمة تلقائية ولا ادعاء أداء تاريخي.'),
+        const Divider(height: 32),
+        ListTile(leading: const Icon(Icons.sync), title: const Text('تحديث النموذج'), subtitle: Text(_statusLabel(updateState)), onTap: () { Navigator.pop(context); checkUpdate(); }),
+        ListTile(leading: const Icon(Icons.brightness_6_outlined), title: const Text('المظهر'), subtitle: const Text('فاتح / داكن'), onTap: widget.onToggleTheme),
+      ]))),
+      body: ListView(padding: const EdgeInsets.all(20), children: [
+        Text('تجربة النموذج', style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold)),
+        const SizedBox(height: 8),
+        Text('ارفع صورة أو التقطها. سيجري ترتيب الكشفات حرفيًا، وتبقى النتيجة قابلة للمراجعة قبل النسخ.', style: Theme.of(context).textTheme.bodyLarge),
+        const SizedBox(height: 20),
+        Card(child: Padding(padding: const EdgeInsets.all(18), child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+          Row(children: [Icon(Icons.shield_outlined, color: colors.primary), const SizedBox(width: 8), const Expanded(child: Text('النموذج الصناعي الحالي للاختبار فقط؛ لا يمثل أداءً على مخطوطات تاريخية.'))]),
+          const SizedBox(height: 18),
+          if (image != null) ClipRRect(borderRadius: BorderRadius.circular(14), child: Image.file(File(image!.path), height: 220, fit: BoxFit.contain)) else Container(height: 180, decoration: BoxDecoration(color: colors.surfaceContainerHighest, borderRadius: BorderRadius.circular(14)), child: const Icon(Icons.image_search_outlined, size: 54)),
+          const SizedBox(height: 16),
+          Row(children: [Expanded(child: FilledButton.icon(onPressed: () => choose(ImageSource.gallery), icon: const Icon(Icons.photo_library_outlined), label: const Text('اختيار صورة'))), const SizedBox(width: 10), Expanded(child: OutlinedButton.icon(onPressed: () => choose(ImageSource.camera), icon: const Icon(Icons.camera_alt_outlined), label: const Text('التقاط صورة')))]),
+          const SizedBox(height: 12),
+          FilledButton.icon(onPressed: image == null ? null : () => setState(() => error = 'سيُفعّل محول ONNX المحلي بعد توفر مكتبة Android native في بيئة Flutter.'), icon: const Icon(Icons.document_scanner_outlined), label: const Text('تشغيل التجربة المحلية')),
+        ]))),
+        const SizedBox(height: 16),
+        Card(child: Padding(padding: const EdgeInsets.all(18), child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+          Text('النص المرتب', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
+          const SizedBox(height: 10),
+          Text(error ?? 'لا توجد نتيجة بعد. بعد نجاح الاستدلال ستظهر المحارف بترتيبها وثقة القراءة.', style: Theme.of(context).textTheme.bodyLarge),
+          const SizedBox(height: 18),
+          Text('عدد الكشفات: —    انتظام القراءة: —', style: Theme.of(context).textTheme.bodySmall),
+        ]))),
+      ]),
+    ));
+  }
+  String _statusLabel(UpdateState state) => switch (state) { UpdateOffline() => 'دون اتصال', UpdateUpToDate() => 'محدّث', UpdateAvailable() => 'تحديث متاح', UpdateActivated() => 'تم التحديث', UpdateFailed(:final message) => message, UpdateChecking() => 'جارٍ الفحص' };
 }
