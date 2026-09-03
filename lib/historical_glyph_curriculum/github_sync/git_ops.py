@@ -199,6 +199,60 @@ class GitManager:
         print(f"  ✓ Stage {stage_id:02d} pushed. Hash: {commit_hash}")
         return commit_hash
 
+    def push_stage(
+        self,
+        stage_id: int,
+        files: list[str],
+        output_dir: str,
+        token: str,
+    ) -> str:
+        """Copy generated data into the data-only branch and push it.
+
+        The notebook passes a token explicitly; it is used only for the transient
+        push URL and is never retained by this manager. Re-running a stage copies
+        into the same stable path and therefore does not duplicate branch data.
+        """
+        if not token:
+            raise ValueError("GitHub token is required for pushing a stage.")
+        import shutil
+
+        self.configure_identity()
+        _run(["git", "checkout", "-B", self.branch], self.repo_dir)
+        output = Path(output_dir)
+        target = self.repo_dir / (
+            "manifests" if stage_id == 0 else f"checkpoints/stage_{stage_id:02d}"
+        )
+        target.mkdir(parents=True, exist_ok=True)
+
+        if stage_id != 0 and output.is_dir():
+            shutil.copytree(output, target, dirs_exist_ok=True)
+        for file_name in files:
+            source = Path(file_name)
+            if not source.exists():
+                continue
+            destination = target / source.name
+            if source.is_dir():
+                shutil.copytree(source, destination, dirs_exist_ok=True)
+            else:
+                shutil.copy2(source, destination)
+
+        _run(["git", "add", str(target.relative_to(self.repo_dir))], self.repo_dir)
+        staged = subprocess.run(
+            ["git", "diff", "--cached", "--quiet"],
+            cwd=str(self.repo_dir), capture_output=True
+        )
+        if staged.returncode == 0:
+            return self.current_commit()
+
+        commit_hash = self.commit(f"dataset(stage-{stage_id:02d}): sync generated data")
+        if not self.push_with_auth(token):
+            raise RuntimeError("Push failed — see logs above for details (token redacted).")
+        return commit_hash
+
+    def current_commit(self) -> str:
+        """Return the current local commit hash."""
+        return _run(["git", "rev-parse", "HEAD"], self.repo_dir).stdout.strip()
+
     # ------------------------------------------------------------------
     # Clone helper (class method, used from notebook)
     # ------------------------------------------------------------------
