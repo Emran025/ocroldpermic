@@ -103,7 +103,7 @@ class ProceduralBackground(Background):
         xs = np.linspace(0, 2, W, dtype=np.float32)
         grain_noise = _fbm(H, W, rng, octaves=4, persistence=0.5, scale=1.0)
         rings = np.sin(ys[:, np.newaxis] * np.pi + grain_noise * 3.0)
-        rings = (rings - rings.min()) / (rings.ptp() + 1e-8)
+        rings = (rings - rings.min()) / (np.ptp(rings) + 1e-8)
         rings_rgb = np.stack([rings * 0.15, rings * 0.05, rings * 0.02], axis=-1)
         canvas = np.clip(base + rings_rgb - 0.05, 0.0, 1.0)
         return (canvas * 255).astype(np.uint8)
@@ -128,7 +128,7 @@ class ProceduralBackground(Background):
         # Brushed metal: strong horizontal grain
         grain = _fbm(H, W, rng, octaves=4, persistence=0.5, scale=1.0)
         grain = gaussian_filter(grain, sigma=(0.5, 8.0))  # stretch horizontally
-        grain = (grain - grain.min()) / (grain.ptp() + 1e-8)
+        grain = (grain - grain.min()) / (np.ptp(grain) + 1e-8)
         combined = (grain - 0.5) * 0.15
         canvas = np.clip(base + combined[:, :, np.newaxis], 0.0, 1.0)
         return (canvas * 255).astype(np.uint8)
