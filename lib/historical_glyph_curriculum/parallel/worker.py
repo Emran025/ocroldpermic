@@ -103,17 +103,50 @@ def render_one_sample(args: dict) -> Optional[dict]:
             jpeg_quality=args.get("jpeg_quality"),
         )
 
-        if is_sequence and len(chars) > 1:
-            result = studio.render_sequence(
-                chars=chars,
-                canvas_size=canvas_size,
-                seed=seed,
-                background=render_kwargs["background"],
-                operation=render_kwargs["operation"],
-                rotation=rotation,
+        def _render_once():
+            if is_sequence and len(chars) > 1:
+                return studio.render_sequence(
+                    chars=chars,
+                    canvas_size=canvas_size,
+                    seed=seed,
+                    background=render_kwargs["background"],
+                    operation=render_kwargs["operation"],
+                    rotation=rotation,
+                )
+            return studio.render(**{**render_kwargs, "char": chars[0] if chars else char})
+
+        try:
+            result = _render_once()
+        except ValueError as first_error:
+            # Some historical SVG sources are syntactically valid but produce
+            # an empty mask in the active rasterizer. Try another family/style
+            # for the same codepoint instead of silently dropping the sample.
+            if is_sequence or "empty (all-zero) mask" not in str(first_error):
+                raise
+            requested_char = chars[0] if chars else char
+            codepoint = ord(requested_char) if len(requested_char) == 1 else int(
+                requested_char.removeprefix("U+").removeprefix("U++"), 16
             )
-        else:
-            result = studio.render(**{**render_kwargs, "char": chars[0] if chars else char})
+            last_error = first_error
+            recovered = False
+            for record in studio._repo.get(codepoint):
+                try:
+                    render_kwargs["family"] = record.family or None
+                    render_kwargs["style"] = record.style or None
+                    result = _render_once()
+                    recovered = True
+                    log.warning(
+                        "Recovered codepoint U+%04X with alternate source %s/%s",
+                        codepoint, record.family, record.style or "(root)",
+                    )
+                    break
+                except ValueError as candidate_error:
+                    if "empty (all-zero) mask" in str(candidate_error):
+                        last_error = candidate_error
+                        continue
+                    raise
+            if not recovered:
+                raise last_error
 
         # Save image
         img_path = Path(args["output_img_path"])
