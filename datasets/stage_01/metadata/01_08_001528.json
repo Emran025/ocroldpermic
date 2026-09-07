@@ -1,0 +1,25 @@
+{
+  "character": "\ud800\udf61",
+  "codepoint": 66401,
+  "source_family": "01_Original_Handwriting",
+  "source_style": "Italic",
+  "operation": "paint",
+  "rotation_deg": 0.39,
+  "occlusion_level": "none",
+  "occlusion_fraction": 0.0,
+  "resolution_scale": 1.0,
+  "seed": 753698104,
+  "bbox_xyxy": [
+    179,
+    133,
+    346,
+    348
+  ],
+  "canvas_size": [
+    512,
+    512
+  ],
+  "chars": [
+    "\ud800\udf61"
+  ]
+}

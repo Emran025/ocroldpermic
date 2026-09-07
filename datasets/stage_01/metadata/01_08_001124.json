@@ -1,0 +1,25 @@
+{
+  "character": "\ud800\udf64",
+  "codepoint": 66404,
+  "source_family": "02_Original_Anbur",
+  "source_style": "Bold",
+  "operation": "paint",
+  "rotation_deg": 0.32,
+  "occlusion_level": "none",
+  "occlusion_fraction": 0.0,
+  "resolution_scale": 1.0,
+  "seed": 460027465,
+  "bbox_xyxy": [
+    105,
+    156,
+    304,
+    385
+  ],
+  "canvas_size": [
+    512,
+    512
+  ],
+  "chars": [
+    "\ud800\udf64"
+  ]
+}
