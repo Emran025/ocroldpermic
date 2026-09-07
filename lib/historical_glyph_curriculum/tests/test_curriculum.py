@@ -126,6 +126,7 @@ def test_manifest_serialization(tmp_path):
         class_distribution={0: 25, 1: 25},
         materials_used=["faded_black"],
         families_used=["01_Original_Handwriting"],
+        styles_used=["Original", "Bold", "Italic"],
         resolution_range=(512, 512),
         seed=2025,
         approved=True,
@@ -138,3 +139,60 @@ def test_manifest_serialization(tmp_path):
     assert loaded.stage_id == 1
     assert loaded.total_images == 50
     assert loaded.class_distribution == {0: 25, 1: 25}
+    assert loaded.styles_used == ["Original", "Bold", "Italic"]
+
+
+def test_generation_plan_with_glyph_targets():
+    st1 = get_stage(1)
+    from historical_glyph_studio import GlyphStudio
+    studio = GlyphStudio(glyph_root=GLYPH_ROOT)
+    targets = studio.available_glyph_targets()
+    assert len(targets) == 342, f"Expected 342 targets, got {len(targets)}"
+
+    plan = GenerationPlan.build(st1, total_samples=342, output_dir=Path("tmp_test"), glyph_targets=targets)
+    assert len(plan.concept_plans) == 12
+    total_assigned = sum(cp.sample_count for cp in plan.concept_plans)
+    assert total_assigned == 342
+
+    # Verify all 342 targets are allocated across concepts
+    all_allocated = []
+    for cp in plan.concept_plans:
+        assert cp.glyph_targets is not None
+        assert len(cp.glyph_targets) == cp.sample_count
+        all_allocated.extend(cp.glyph_targets)
+    assert len(all_allocated) == 342
+    # Verify all 3 families and all 3 styles are present in the allocation
+    fams = set(t["family"] for t in all_allocated)
+    styles = set(t["style"] for t in all_allocated)
+    assert fams == {"01_Original_Handwriting", "02_Original_Anbur", "03_Modern_Permic"}
+    assert styles == {"Bold", "Italic", "Original"}
+
+
+def test_executor_with_342_targets(tmp_path):
+    st1 = get_stage(1)
+    from historical_glyph_studio import GlyphStudio
+    studio = GlyphStudio(glyph_root=GLYPH_ROOT)
+    targets = studio.available_glyph_targets()
+    assert len(targets) == 342
+
+    stage_out = tmp_path / "stage_01_test"
+    plan = GenerationPlan.build(
+        stage=st1,
+        total_samples=36,  # 36 samples = 3 samples per concept across 12 concepts
+        output_dir=stage_out,
+        glyph_targets=targets,
+        global_seed=123,
+    )
+    executor = CurriculumExecutor(glyph_root=GLYPH_ROOT, workers=1)
+    state_path = stage_out / "state.json"
+    summary = executor.generate_stage(plan, state_path)
+
+    assert summary["total_images"] == 36
+    assert len(summary["families_used"]) > 0
+    assert len(summary["styles_used"]) > 0
+    val = DatasetValidator()
+    report = val.validate(stage_out / "images", stage_out / "labels")
+    assert report.is_valid
+    assert report.total_images == 36
+    assert report.total_labels == 36
+

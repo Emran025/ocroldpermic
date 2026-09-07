@@ -46,8 +46,7 @@ class ValidationReport:
             f"  Missing labels:   {len(self.missing_labels)}",
             f"  Missing images:   {len(self.missing_images)}",
             f"  Empty labels:     {len(self.empty_labels)}",
-            f"  Invalid boxes:    {len(self.invalid_boxes)}",
-            f"  Valid:            {'YES ✓' if self.is_valid else 'NO ✗'}",
+            f"  Valid:            {'YES (PASS)' if self.is_valid else 'NO (FAIL)'}",
         ]
         if self.resolution_stats:
             lines.append(f"  Res (mean WxH):   {self.resolution_stats.get('mean_w',0):.0f}x{self.resolution_stats.get('mean_h',0):.0f}")

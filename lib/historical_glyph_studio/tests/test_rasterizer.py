@@ -83,3 +83,19 @@ def test_normalizer_all_chars(glyph_root):
         except Exception as e:
             failures.append((cp, str(e)))
     assert len(failures) == 0, f"Rasterization failures: {failures}"
+
+
+def test_normalizer_all_342_glyph_records(glyph_root):
+    """Every single one of the 342 glyph SVG files must rasterize without empty mask."""
+    repo = GlyphRepository(glyph_root)
+    assert len(repo.records) == 342, f"Expected 342 glyph records, found {len(repo.records)}"
+    norm = GlyphNormalizer(canonical_size=(128, 128), cache=True)
+    failures = []
+    for record in repo.records:
+        try:
+            gm = norm.normalize(record)
+            assert gm.mask.max() > 0.01, f"Empty mask for {record.path}"
+        except Exception as e:
+            failures.append((str(record.path), str(e)))
+    assert len(failures) == 0, f"Failures on {len(failures)} glyphs: {failures[:5]}"
+

@@ -1,4 +1,7 @@
 """Historical Glyph Curriculum Engine — Layer 2."""
+import os
+os.environ.setdefault("KMP_DUPLICATE_LIB_OK", "TRUE")
+
 from .curriculum.stage import STAGES, get_stage
 from .curriculum.plan import GenerationPlan
 

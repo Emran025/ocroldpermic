@@ -30,6 +30,9 @@ def _build_sample_args(
     canonical_size: tuple,
     seed: int,
     family: str | None = None,
+    style: str | None = None,
+    families_seq: list[str] | None = None,
+    styles_seq: list[str] | None = None,
 ) -> dict:
     """Build the args dict for render_one_sample."""
     is_sequence = isinstance(concept.glyphs_per_image, (list, tuple)) or concept.glyphs_per_image > 1
@@ -62,6 +65,9 @@ def _build_sample_args(
         "glyph_scale": concept.glyph_scale,
         "canvas_size": concept.canvas_size,
         "family": family,
+        "style": style,
+        "families": families_seq,
+        "styles": styles_seq,
         "seed": seed,
         "canonical_size": canonical_size,
         "output_img_path": str(output_dir / "images" / f"{stem}.png"),
@@ -120,6 +126,7 @@ class CurriculumExecutor:
         output_dir: Path,
         base_seed: int,
         progress_callback: Optional[Callable[[int, int], None]] = None,
+        glyph_targets: Optional[list[dict]] = None,
     ) -> list[dict]:
         """
         Generate *sample_count* images for a single concept.
@@ -141,36 +148,85 @@ class CurriculumExecutor:
         # Build all arg dicts
         rng = np.random.default_rng(base_seed)
         all_args = []
-        chars_cycle = char_list * (sample_count // len(char_list) + 1)
+        is_multi = gpi_max > 1
 
-        for i in range(sample_count):
-            n_glyphs = int(rng.integers(gpi_min, gpi_max + 1))
-            chars_seq = chars_cycle[i * n_glyphs: i * n_glyphs + n_glyphs]
-            if not chars_seq:
-                chars_seq = [chars_cycle[i % len(chars_cycle)]]
+        if glyph_targets and len(glyph_targets) > 0:
+            n_targets = len(glyph_targets)
+            for i in range(sample_count):
+                n_glyphs = int(rng.integers(gpi_min, gpi_max + 1))
+                seed_i = int(base_seed) ^ int(rng.integers(0, 2**31))
 
-            char = chars_seq[0]
-            seed_i = int(base_seed) ^ int(rng.integers(0, 2**31))
+                if not is_multi or n_glyphs <= 1:
+                    t = glyph_targets[i % n_targets]
+                    char = str(t.get("char", ""))
+                    chars_seq = [char]
+                    family = t.get("family") or None
+                    style = t.get("style") or None
+                    families_seq = [family]
+                    styles_seq = [style]
+                else:
+                    seq_targets = [glyph_targets[(i * n_glyphs + j) % n_targets] for j in range(n_glyphs)]
+                    chars_seq = [str(t.get("char", "")) for t in seq_targets]
+                    char = chars_seq[0]
+                    if concept.mixed_families:
+                        families_seq = [t.get("family") or None for t in seq_targets]
+                        styles_seq = [t.get("style") or None for t in seq_targets]
+                        family = families_seq[0]
+                        style = styles_seq[0]
+                    else:
+                        ref_t = seq_targets[0]
+                        family = ref_t.get("family") or None
+                        style = ref_t.get("style") or None
+                        families_seq = [family] * n_glyphs
+                        styles_seq = [style] * n_glyphs
 
-            # Family mixing
-            family = None
-            if concept.mixed_families and rng.random() < 0.5:
-                family = None  # Let studio pick randomly
+                args = _build_sample_args(
+                    concept=concept,
+                    char=char,
+                    chars_seq=chars_seq,
+                    sample_idx=i,
+                    stage_id=stage_id,
+                    concept_idx=concept_idx,
+                    output_dir=output_dir,
+                    glyph_root=self.glyph_root,
+                    canonical_size=self.canonical_size,
+                    seed=seed_i,
+                    family=family,
+                    style=style,
+                    families_seq=families_seq,
+                    styles_seq=styles_seq,
+                )
+                all_args.append(args)
+        else:
+            chars_cycle = char_list * (sample_count // len(char_list) + 1) if char_list else ["\U00010350"]
+            for i in range(sample_count):
+                n_glyphs = int(rng.integers(gpi_min, gpi_max + 1))
+                chars_seq = chars_cycle[i * n_glyphs: i * n_glyphs + n_glyphs]
+                if not chars_seq:
+                    chars_seq = [chars_cycle[i % len(chars_cycle)]]
+                char = chars_seq[0]
+                seed_i = int(base_seed) ^ int(rng.integers(0, 2**31))
 
-            args = _build_sample_args(
-                concept=concept,
-                char=char,
-                chars_seq=chars_seq,
-                sample_idx=i,
-                stage_id=stage_id,
-                concept_idx=concept_idx,
-                output_dir=output_dir,
-                glyph_root=self.glyph_root,
-                canonical_size=self.canonical_size,
-                seed=seed_i,
-                family=family,
-            )
-            all_args.append(args)
+                family = None
+                style = None
+                if concept.mixed_families and rng.random() < 0.5:
+                    family = None
+
+                args = _build_sample_args(
+                    concept=concept,
+                    char=char,
+                    chars_seq=chars_seq,
+                    sample_idx=i,
+                    stage_id=stage_id,
+                    concept_idx=concept_idx,
+                    output_dir=output_dir,
+                    glyph_root=self.glyph_root,
+                    canonical_size=self.canonical_size,
+                    seed=seed_i,
+                    family=family,
+                    style=style,
+                )
+                all_args.append(args)
 
         # Submit in batches
         results: list[dict] = []
@@ -244,6 +300,7 @@ class CurriculumExecutor:
         class_counter: Counter = Counter()
         materials_used: set = set()
         families_used: set = set()
+        styles_used: set = set()
         t0 = time.time()
 
         for cp in plan.concept_plans:
@@ -269,6 +326,7 @@ class CurriculumExecutor:
                 output_dir=plan.output_dir,
                 base_seed=cp.seed,
                 progress_callback=_prog,
+                glyph_targets=getattr(cp, "glyph_targets", None),
             )
 
             all_metadata.extend(meta_list)
@@ -281,6 +339,9 @@ class CurriculumExecutor:
                 fam = m.get("source_family", "")
                 if fam:
                     families_used.add(fam)
+                sty = m.get("source_style", "")
+                if sty:
+                    styles_used.add(sty)
                 cp_val = m.get("codepoint")
                 if cp_val is not None:
                     cls_id = max(0, int(cp_val) - 0x10350)
@@ -298,5 +359,6 @@ class CurriculumExecutor:
             "class_distribution": dict(class_counter),
             "materials_used": sorted(materials_used),
             "families_used": sorted(families_used),
+            "styles_used": sorted(styles_used),
             "generation_time_seconds": elapsed,
         }

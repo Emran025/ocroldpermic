@@ -18,6 +18,8 @@ Quick start::
     )
     # result.image → RGB uint8 numpy array
 """
+import os
+os.environ.setdefault("KMP_DUPLICATE_LIB_OK", "TRUE")
 
 from .studio import GlyphStudio
 from .rendering.pipeline import RenderResult

@@ -158,8 +158,16 @@ def _parse_svg_path_d(d_str: str) -> List[np.ndarray]:
     polygons: List[np.ndarray] = []
     current_poly: List[List[float]] = []
     cursor_x = cursor_y = start_x = start_y = 0.0
+    last_cp_x = last_cp_y = 0.0
+    last_cmd: Optional[str] = None
     cmd: Optional[str] = None
     i, n = 0, len(tokens)
+
+    def _close_subpath():
+        nonlocal current_poly
+        if current_poly:
+            polygons.append(np.array(current_poly, dtype=np.float64))
+            current_poly = []
 
     while i < n:
         tok = tokens[i]
@@ -169,10 +177,11 @@ def _parse_svg_path_d(d_str: str) -> List[np.ndarray]:
             if cmd in ('Z', 'z'):
                 if current_poly:
                     current_poly.append([start_x, start_y])
-                    polygons.append(np.array(current_poly, dtype=np.float64))
-                    current_poly = []
+                    _close_subpath()
                 cursor_x, cursor_y = start_x, start_y
-            continue
+                last_cp_x, last_cp_y = cursor_x, cursor_y
+                last_cmd = cmd
+                continue
 
         if cmd is None:
             i += 1
@@ -183,28 +192,50 @@ def _parse_svg_path_d(d_str: str) -> List[np.ndarray]:
                 cursor_x, cursor_y = float(tokens[i]), float(tokens[i + 1])
                 i += 2
                 start_x, start_y = cursor_x, cursor_y
-                if current_poly:
-                    polygons.append(np.array(current_poly, dtype=np.float64))
+                _close_subpath()
                 current_poly = [[cursor_x, cursor_y]]
                 cmd = 'L'
+                last_cp_x, last_cp_y = cursor_x, cursor_y
             elif cmd == 'm':
                 cursor_x += float(tokens[i])
                 cursor_y += float(tokens[i + 1])
                 i += 2
                 start_x, start_y = cursor_x, cursor_y
-                if current_poly:
-                    polygons.append(np.array(current_poly, dtype=np.float64))
+                _close_subpath()
                 current_poly = [[cursor_x, cursor_y]]
                 cmd = 'l'
+                last_cp_x, last_cp_y = cursor_x, cursor_y
             elif cmd == 'L':
                 cursor_x, cursor_y = float(tokens[i]), float(tokens[i + 1])
                 i += 2
                 current_poly.append([cursor_x, cursor_y])
+                last_cp_x, last_cp_y = cursor_x, cursor_y
             elif cmd == 'l':
                 cursor_x += float(tokens[i])
                 cursor_y += float(tokens[i + 1])
                 i += 2
                 current_poly.append([cursor_x, cursor_y])
+                last_cp_x, last_cp_y = cursor_x, cursor_y
+            elif cmd == 'H':
+                cursor_x = float(tokens[i])
+                i += 1
+                current_poly.append([cursor_x, cursor_y])
+                last_cp_x, last_cp_y = cursor_x, cursor_y
+            elif cmd == 'h':
+                cursor_x += float(tokens[i])
+                i += 1
+                current_poly.append([cursor_x, cursor_y])
+                last_cp_x, last_cp_y = cursor_x, cursor_y
+            elif cmd == 'V':
+                cursor_y = float(tokens[i])
+                i += 1
+                current_poly.append([cursor_x, cursor_y])
+                last_cp_x, last_cp_y = cursor_x, cursor_y
+            elif cmd == 'v':
+                cursor_y += float(tokens[i])
+                i += 1
+                current_poly.append([cursor_x, cursor_y])
+                last_cp_x, last_cp_y = cursor_x, cursor_y
             elif cmd in ('C', 'c'):
                 if cmd == 'C':
                     x1, y1 = float(tokens[i]), float(tokens[i + 1])
@@ -218,6 +249,30 @@ def _parse_svg_path_d(d_str: str) -> List[np.ndarray]:
                     x = cursor_x + float(tokens[i + 4])
                     y = cursor_y + float(tokens[i + 5])
                 i += 6
+                last_cp_x, last_cp_y = x2, y2
+                for t in np.linspace(0.1, 1.0, 8):
+                    bx = ((1 - t) ** 3 * cursor_x + 3 * (1 - t) ** 2 * t * x1
+                          + 3 * (1 - t) * t ** 2 * x2 + t ** 3 * x)
+                    by = ((1 - t) ** 3 * cursor_y + 3 * (1 - t) ** 2 * t * y1
+                          + 3 * (1 - t) * t ** 2 * y2 + t ** 3 * y)
+                    current_poly.append([bx, by])
+                cursor_x, cursor_y = x, y
+            elif cmd in ('S', 's'):
+                if last_cmd in ('C', 'c', 'S', 's'):
+                    x1 = 2 * cursor_x - last_cp_x
+                    y1 = 2 * cursor_y - last_cp_y
+                else:
+                    x1, y1 = cursor_x, cursor_y
+                if cmd == 'S':
+                    x2, y2 = float(tokens[i]), float(tokens[i + 1])
+                    x, y = float(tokens[i + 2]), float(tokens[i + 3])
+                else:
+                    x2 = cursor_x + float(tokens[i])
+                    y2 = cursor_y + float(tokens[i + 1])
+                    x = cursor_x + float(tokens[i + 2])
+                    y = cursor_y + float(tokens[i + 3])
+                i += 4
+                last_cp_x, last_cp_y = x2, y2
                 for t in np.linspace(0.1, 1.0, 8):
                     bx = ((1 - t) ** 3 * cursor_x + 3 * (1 - t) ** 2 * t * x1
                           + 3 * (1 - t) * t ** 2 * x2 + t ** 3 * x)
@@ -235,18 +290,47 @@ def _parse_svg_path_d(d_str: str) -> List[np.ndarray]:
                     x = cursor_x + float(tokens[i + 2])
                     y = cursor_y + float(tokens[i + 3])
                 i += 4
+                last_cp_x, last_cp_y = x1, y1
                 for t in np.linspace(0.15, 1.0, 6):
                     bx = (1 - t) ** 2 * cursor_x + 2 * (1 - t) * t * x1 + t ** 2 * x
                     by = (1 - t) ** 2 * cursor_y + 2 * (1 - t) * t * y1 + t ** 2 * y
                     current_poly.append([bx, by])
                 cursor_x, cursor_y = x, y
+            elif cmd in ('T', 't'):
+                if last_cmd in ('Q', 'q', 'T', 't'):
+                    x1 = 2 * cursor_x - last_cp_x
+                    y1 = 2 * cursor_y - last_cp_y
+                else:
+                    x1, y1 = cursor_x, cursor_y
+                if cmd == 'T':
+                    x, y = float(tokens[i]), float(tokens[i + 1])
+                else:
+                    x = cursor_x + float(tokens[i])
+                    y = cursor_y + float(tokens[i + 1])
+                i += 2
+                last_cp_x, last_cp_y = x1, y1
+                for t in np.linspace(0.15, 1.0, 6):
+                    bx = (1 - t) ** 2 * cursor_x + 2 * (1 - t) * t * x1 + t ** 2 * x
+                    by = (1 - t) ** 2 * cursor_y + 2 * (1 - t) * t * y1 + t ** 2 * y
+                    current_poly.append([bx, by])
+                cursor_x, cursor_y = x, y
+            elif cmd in ('A', 'a'):
+                if cmd == 'A':
+                    x, y = float(tokens[i + 5]), float(tokens[i + 6])
+                else:
+                    x = cursor_x + float(tokens[i + 5])
+                    y = cursor_y + float(tokens[i + 6])
+                i += 7
+                current_poly.append([x, y])
+                cursor_x, cursor_y = x, y
+                last_cp_x, last_cp_y = cursor_x, cursor_y
             else:
                 i += 1
+            last_cmd = cmd
         except (IndexError, ValueError):
             i += 1
 
-    if current_poly:
-        polygons.append(np.array(current_poly, dtype=np.float64))
+    _close_subpath()
     return polygons
 
 
@@ -257,7 +341,8 @@ def _rasterize_pure_python(
     Pure-Python + OpenCV rasterizer. Always available.
 
     Strategy: parse SVG paths + group transforms, apply 4× supersampling
-    with cv2.fillPoly, then downscale with INTER_AREA for antialiasing.
+    with cv2.fillPoly (handling compound paths with holes), then downscale
+    with INTER_AREA for antialiasing.
     Returns an RGBA array where the glyph occupies the alpha channel.
     """
     root = ET.fromstring(doc.raw_bytes)
@@ -291,16 +376,60 @@ def _rasterize_pure_python(
         total_t = parent_t @ elem_t
         tag = elem.tag
         local = tag.split('}')[-1] if '}' in tag else tag
+
+        polys: List[np.ndarray] = []
         if local == 'path':
             d = elem.get('d', '')
             if d:
-                for poly in _parse_svg_path_d(d):
-                    if len(poly) < 3:
-                        continue
-                    pts_h = np.hstack([poly, np.ones((len(poly), 1))])
-                    final_pts = (V @ total_t @ pts_h.T).T
-                    pts_2d = np.round(final_pts[:, :2]).astype(np.int32)
-                    cv2.fillPoly(high_res, [pts_2d], 255)
+                polys = _parse_svg_path_d(d)
+        elif local == 'rect':
+            rx_val = float(elem.get('x', 0) or 0)
+            ry_val = float(elem.get('y', 0) or 0)
+            rw = float(elem.get('width', 0) or 0)
+            rh = float(elem.get('height', 0) or 0)
+            if rw > 0 and rh > 0:
+                polys = [np.array([[rx_val, ry_val], [rx_val + rw, ry_val], [rx_val + rw, ry_val + rh], [rx_val, ry_val + rh]], dtype=np.float64)]
+        elif local in ('polygon', 'polyline'):
+            pts_str = elem.get('points', '')
+            coords = [float(v) for v in re.split(r'[\s,]+', pts_str.strip()) if v]
+            if len(coords) >= 4:
+                pts = [[coords[j], coords[j + 1]] for j in range(0, len(coords) - 1, 2)]
+                polys = [np.array(pts, dtype=np.float64)]
+        elif local in ('circle', 'ellipse'):
+            cx = float(elem.get('cx', 0) or 0)
+            cy = float(elem.get('cy', 0) or 0)
+            r_x = float(elem.get('r', 0) or elem.get('rx', 0) or 0)
+            r_y = float(elem.get('r', 0) or elem.get('ry', 0) or 0)
+            if r_x > 0 and r_y > 0:
+                theta = np.linspace(0, 2 * np.pi, 36)
+                pts = np.column_stack([cx + r_x * np.cos(theta), cy + r_y * np.sin(theta)])
+                polys = [pts]
+
+        if polys:
+            pts_list = []
+            for poly in polys:
+                if len(poly) < 2:
+                    continue
+                pts_h = np.hstack([poly, np.ones((len(poly), 1))])
+                final_pts = (V @ total_t @ pts_h.T).T
+                pts_2d = np.round(final_pts[:, :2]).astype(np.int32)
+                pts_list.append(pts_2d)
+
+            if pts_list:
+                fill = elem.get('fill', '').strip().lower()
+                # Default fill in SVG is black when unspecified
+                if fill != 'none':
+                    closed_list = [p for p in pts_list if len(p) >= 3]
+                    if closed_list:
+                        cv2.fillPoly(high_res, closed_list, 255)
+
+                stroke = elem.get('stroke', '').strip().lower()
+                sw_str = elem.get('stroke-width', '')
+                if stroke and stroke != 'none':
+                    sw = float(re.sub(r'[^\d.]', '', sw_str) or 1.0)
+                    scaled_sw = max(1, int(round(sw * (sx + sy) / 2)))
+                    cv2.polylines(high_res, pts_list, isClosed=(local != 'polyline'), color=255, thickness=scaled_sw)
+
         for child in elem:
             _render(child, total_t)
 
@@ -309,9 +438,7 @@ def _rasterize_pure_python(
     # Downsample
     mask = cv2.resize(high_res, (width, height), interpolation=cv2.INTER_AREA)
 
-    # Return RGBA — glyph is black on white in Potrace SVGs (dark = ink).
-    # Use luminance inversion: bright pixels → transparent, dark pixels → opaque.
-    # For the filled-polygon approach: mask is already the ink mask (255 = glyph).
+    # Return RGBA where glyph occupies the alpha channel
     rgba = np.zeros((height, width, 4), dtype=np.uint8)
     rgba[:, :, 3] = mask  # alpha = glyph mask
     return rgba

@@ -121,6 +121,27 @@ class GlyphStudio:
         """Return all discovered family names."""
         return self._repo.families
 
+    def available_glyph_records(self) -> List[GlyphRecord]:
+        """Return all discovered GlyphRecord objects (342 shapes)."""
+        return list(self._repo.records)
+
+    def available_glyph_targets(self) -> List[Dict[str, Any]]:
+        """
+        Return structured target descriptors for all 342 glyph variants.
+        Each dict contains: char, codepoint, family, style, unicode_name, path.
+        """
+        return [
+            {
+                "char": r.char,
+                "codepoint": r.codepoint,
+                "family": r.family,
+                "style": r.style,
+                "unicode_name": r.unicode_name,
+                "path": str(r.path),
+            }
+            for r in self._repo.records
+        ]
+
     def repository_summary(self) -> str:
         """Human-readable summary of the glyph repository."""
         return self._repo.summary()
@@ -286,6 +307,8 @@ class GlyphStudio:
         rotation: Union[Tuple[float, float], float, bool] = True,
         canvas_size: Tuple[int, int] = (1024, 512),
         seed: Optional[int] = None,
+        families: Optional[Sequence[Optional[str]]] = None,
+        styles: Optional[Sequence[Optional[str]]] = None,
         **kwargs: Any,
     ) -> RenderResult:
         """Render multiple glyphs side-by-side on one canvas."""
@@ -304,7 +327,16 @@ class GlyphStudio:
         config.background = background  # type: ignore[attr-defined]
 
         resolver = GlyphResolver(self._repo, rng)
-        records = [resolver.resolve(c) for c in chars]
+        records = []
+        for idx, c in enumerate(chars):
+            fam = families[idx] if families and idx < len(families) else None
+            sty = styles[idx] if styles and idx < len(styles) else None
+            source_cfg = GlyphSourceConfig(
+                family=fam or "",
+                style=sty or "",
+                selection_mode="fixed" if (fam or sty) else "random",
+            )
+            records.append(resolver.resolve(c, source_cfg))
 
         return self._pipeline.render_sequence(records, config, rng)
 

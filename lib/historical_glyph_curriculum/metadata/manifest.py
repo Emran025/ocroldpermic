@@ -22,6 +22,7 @@ class StageManifest:
     approved: bool
     commit_hash: Optional[str]
     generation_time_seconds: float
+    styles_used: List[str] = field(default_factory=list)
     concept_summaries: List[dict] = field(default_factory=list)
 
     @property
@@ -39,6 +40,7 @@ class StageManifest:
         d2 = dict(d)
         d2["class_distribution"] = {int(k): v for k, v in d2.get("class_distribution", {}).items()}
         d2["resolution_range"] = tuple(d2.get("resolution_range", (0, 0)))
+        d2.setdefault("styles_used", [])
         d2.setdefault("concept_summaries", [])
         return StageManifest(**d2)
 
