@@ -29,6 +29,8 @@ class DocumentSpec:
     max_chars: int = 30
     background: str = "procedural_parchment"
     material: str = "faded_black"
+    handwriting_family: str = "01_Original_Handwriting"
+    handwriting_style: str = "Original"
     include_signature: bool = True
     include_seal: bool = True
 
@@ -38,12 +40,31 @@ def _fit_background(source: Optional[Path], size: tuple[int, int], rng: np.rando
     if source and source.exists():
         image = Image.open(source).convert("RGB")
     else:
-        # Warm parchment fallback; the per-pixel variation is deterministic.
-        base = np.full((h, w, 3), [193, 167, 125], dtype=np.float32)
-        noise = rng.normal(0, 13, (h, w, 1))
+        # Codex Runicus-inspired procedural parchment. The constants come from
+        # codex_runicus_style_profile.json: warm ochre median, broad colour
+        # variation, darkened edges, and a fine irregular fibre/line cadence.
         yy, xx = np.mgrid[:h, :w]
+        base = np.zeros((h, w, 3), dtype=np.float32)
+        base[:] = [185.0, 148.0, 100.0]
+        low_frequency = rng.normal(0, 1, (max(2, h // 18), max(2, w // 18)))
+        low_frequency = np.asarray(Image.fromarray(np.uint8(np.clip(low_frequency * 28 + 128, 0, 255))).resize((w, h), Image.Resampling.BICUBIC), dtype=np.float32) - 128
+        fibre = rng.normal(0, 7.5, (h, w, 1))
         vignette = ((xx - w / 2) ** 2 / (w / 2) ** 2 + (yy - h / 2) ** 2 / (h / 2) ** 2)
-        base += noise - np.clip(vignette[..., None] - 0.7, 0, 1) * 30
+        base += low_frequency[..., None] * 0.62 + fibre
+        base -= np.clip(vignette[..., None] - 0.35, 0, 1) * 24
+        # Very faint horizontal fibre/laid-line structure, not OCR labels.
+        cadence = max(20, int(h * 0.0335))
+        for line_y in range(int(h * 0.04), h, cadence):
+            thickness = int(rng.integers(1, 3))
+            alpha = float(rng.uniform(2.0, 8.0))
+            band = np.exp(-((yy - line_y) / max(1, 3 * thickness)) ** 2) * alpha
+            base -= band[..., None] * np.array([0.9, 0.65, 0.4])
+        # Sparse warm stains and edge wear.
+        for _ in range(max(10, w // 100)):
+            cx, cy = rng.uniform(0, w), rng.uniform(0, h)
+            rx, ry = rng.uniform(12, 110), rng.uniform(8, 90)
+            stain = np.exp(-(((xx - cx) / rx) ** 2 + ((yy - cy) / ry) ** 2))
+            base -= stain[..., None] * rng.uniform(2, 15) * np.array([0.85, 0.55, 0.3])
         image = Image.fromarray(np.uint8(np.clip(base, 0, 255)), "RGB")
     scale = max(w / image.width, h / image.height)
     resized = image.resize((max(w, int(image.width * scale)), max(h, int(image.height * scale))), Image.Resampling.LANCZOS)

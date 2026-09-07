@@ -97,7 +97,7 @@ flowchart TD
 
 - **`notebook/progressive_generation.ipynb`**: 16-cell interactive notebook for orchestrating the 12-stage synthetic dataset generation in Google Colab with secure token handling and live visual approval gates.
 - **`notebook/adaptive_training.ipynb`**: 19-cell production training notebook implementing the full adaptive training loop, plateau monitoring, automated remediation, regression checks, and model publishing.
-- **`notebook/archival_manuscript_synthesis.ipynb`**: 13-cell final notebook that creates 20 full-page synthetic archival documents from user backgrounds, exports YOLO labels and audit metadata, and discovers the highest available model stage dynamically. The document renderer is pinned to `01_Original_Handwriting/Original` for every glyph, adds faint ruled lines and controlled brown-red ink aging, and records that choice in each JSON sidecar.
+- **`notebook/archival_manuscript_synthesis.ipynb`**: 13-cell final notebook that creates 20 full-page synthetic archival documents from user backgrounds, exports YOLO labels and audit metadata, and discovers the highest available model stage dynamically. The document renderer is pinned to `01_Original_Handwriting/Original` for every glyph, adds faint ruled lines and controlled brown-red ink aging, and records that choice in each JSON sidecar. When no user background is supplied, it uses the Codex-inspired procedural profile stored in `codex_runicus_style_profile.json`, derived from the attached reference image using robust colour statistics and row-cadence analysis.
 
 ### 5. Archival Vision Lab (`app/`)
 *Layer 4: Generic on-device Flutter OCR runtime*
