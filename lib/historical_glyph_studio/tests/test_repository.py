@@ -2,6 +2,8 @@
 
 import pytest
 from pathlib import Path
+from historical_glyph_studio import GlyphStudio
+from historical_glyph_studio.annotation import codepoint_to_class_id
 from historical_glyph_studio.glyphs.repository import GlyphRepository
 
 
@@ -29,6 +31,21 @@ def test_repository_codepoints(glyph_root):
     # Old Permic range
     assert all(0x10350 <= cp <= 0x1037F for cp in cps), \
         "Expected Old Permic codepoints (U+10350–U+1037F)"
+
+
+def test_model_classes_collapse_font_variants_to_unicode(glyph_root):
+    """Font/style variants are visual samples, not separate model classes."""
+    repo = GlyphRepository(glyph_root)
+    studio = GlyphStudio(glyph_root=glyph_root)
+
+    assert len(repo.records) == 342
+    assert len(repo.codepoints) == 38
+    assert studio.available_class_names() == [f"U+{cp:04X}" for cp in repo.codepoints]
+
+    for codepoint in repo.codepoints:
+        records = repo.get(codepoint)
+        assert len({codepoint_to_class_id(record.codepoint) for record in records}) == 1
+        assert codepoint_to_class_id(codepoint) == repo.codepoints.index(codepoint)
 
 
 def test_repository_has_method(glyph_root):
