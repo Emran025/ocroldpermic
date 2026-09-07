@@ -1,0 +1,78 @@
+{
+  "stage_id": 1,
+  "stage_name": "Clean Isolated Glyphs",
+  "total_images": 34200,
+  "class_distribution": {
+    "7": 900,
+    "6": 900,
+    "35": 900,
+    "37": 900,
+    "2": 900,
+    "10": 900,
+    "19": 900,
+    "33": 900,
+    "17": 900,
+    "11": 900,
+    "15": 900,
+    "8": 900,
+    "29": 900,
+    "30": 900,
+    "0": 900,
+    "22": 900,
+    "16": 900,
+    "9": 900,
+    "27": 900,
+    "21": 900,
+    "5": 900,
+    "34": 900,
+    "20": 900,
+    "12": 900,
+    "3": 900,
+    "18": 900,
+    "23": 900,
+    "24": 900,
+    "1": 900,
+    "36": 900,
+    "32": 900,
+    "4": 900,
+    "25": 900,
+    "31": 900,
+    "14": 900,
+    "28": 900,
+    "13": 900,
+    "26": 900
+  },
+  "materials_used": [
+    "engraved",
+    "faded_black",
+    "ink",
+    "paint",
+    "raised"
+  ],
+  "families_used": [
+    "01_Original_Handwriting",
+    "02_Original_Anbur",
+    "03_Modern_Permic"
+  ],
+  "resolution_range": [
+    512,
+    512
+  ],
+  "seed": 43,
+  "approved": true,
+  "commit_hash": null,
+  "generation_time_seconds": 13879.637855052948,
+  "styles_used": [
+    "Bold",
+    "Italic",
+    "Original"
+  ],
+  "concept_summaries": [],
+  "dataset_contract": {
+    "image_format": "png",
+    "label_format": "yolo-5-normalized",
+    "class_count": 38,
+    "label_fields": 5,
+    "dataset_root": "datasets/stage_01"
+  }
+}
