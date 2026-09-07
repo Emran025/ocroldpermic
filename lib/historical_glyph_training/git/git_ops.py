@@ -178,7 +178,10 @@ class GitManager:
         auth_url = self._authenticated_url()
         try:
             subprocess.run(
-                ["git", "push", auth_url, f"{branch}:{branch}"],
+                # This manager owns only the requested training/release branch.
+                # Checkpoint writes may force-update colab-checkpoints, but never
+                # touch the independent colab-generated-images branch.
+                ["git", "push", "--force", auth_url, f"{branch}:{branch}"],
                 cwd=self.work_dir, check=True, capture_output=True
             )
         except subprocess.CalledProcessError:

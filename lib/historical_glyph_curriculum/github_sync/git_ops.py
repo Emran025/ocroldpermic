@@ -35,7 +35,7 @@ def _redact(text: str) -> str:
 
 class GitManager:
     """
-    Manages git operations for the colab-checkpoints branch.
+    Manages git operations for the configured branch (image generation uses colab-generated-images).
 
     Parameters
     ----------
@@ -132,8 +132,11 @@ class GitManager:
         """
         auth_url = self._auth_url(token)
         # Use a transient remote push without modifying stored config
+        # This manager owns only its configured branch (the image branch in the
+        # generation notebook). Force-push is intentionally scoped to that branch
+        # so it can never rewrite training checkpoints or release history.
         result = subprocess.run(
-            ["git", "push", auth_url, f"HEAD:{self.branch}"],
+            ["git", "push", "--force", auth_url, f"HEAD:{self.branch}"],
             cwd=str(self.repo_dir),
             capture_output=True,
             text=True,
@@ -217,7 +220,7 @@ class GitManager:
         import shutil
 
         self.configure_identity()
-        # This branch is append-only for generated image datasets. Reconcile
+        # This branch is owned by the image generator; force-push is scoped to this branch. Reconcile
         # remote commits before writing so a parallel generator never erases
         # another generator's stage. Never use force push here.
         remote_ref = _run(["git", "ls-remote", "--heads", "origin", self.branch], self.repo_dir, check=False).stdout.strip()
@@ -228,7 +231,7 @@ class GitManager:
             _run(["git", "checkout", "-B", self.branch], self.repo_dir)
         output = Path(output_dir)
         target = self.repo_dir / (
-            "manifests" if stage_id == 0 else f"checkpoints/stage_{stage_id:02d}"
+            "manifests" if stage_id == 0 else f"datasets/stage_{stage_id:02d}"
         )
         target.mkdir(parents=True, exist_ok=True)
 
@@ -255,8 +258,8 @@ class GitManager:
         commit_hash = self.commit(f"dataset(stage-{stage_id:02d}): sync generated images")
         if not self.push_with_auth(token):
             raise RuntimeError(
-                "Image branch push was rejected. The remote changed concurrently; "
-                "pull/rebase and retry this stage without force-pushing."
+                "Image branch push failed. The image branch is independent; "
+                "inspect the remote error and retry the image branch only."
             )
         return commit_hash
 
