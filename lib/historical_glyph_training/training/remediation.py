@@ -4,7 +4,7 @@ from __future__ import annotations
 import shutil
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+from typing import Callable, Dict, List, Optional, Tuple
 
 from ..config.training_config import ClassMetric, TrainingConfig
 from ..dataset.loader import DatasetLoader, StageDataset
@@ -55,6 +55,7 @@ class RemediationEngine:
         weak_classes: List[ClassMetric],
         round_number: int,
         pre_eval: EvaluationResult,
+        on_epoch_checkpoint: Optional[Callable] = None,
     ) -> Tuple[str, RemediationResult]:
         """
         Run one remediation cycle.
@@ -114,7 +115,7 @@ class RemediationEngine:
             patience=self.config.remediation.patience,
             min_delta=self.config.remediation.min_improvement_delta,
         )
-        new_model_path = trainer.train()
+        new_model_path = trainer.train(on_epoch_checkpoint=on_epoch_checkpoint)
 
         # 4. Re-evaluate
         evaluator = Evaluator(new_model_path, stage_dataset.data_yaml)
