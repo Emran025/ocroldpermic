@@ -217,7 +217,15 @@ class GitManager:
         import shutil
 
         self.configure_identity()
-        _run(["git", "checkout", "-B", self.branch], self.repo_dir)
+        # This branch is append-only for generated image datasets. Reconcile
+        # remote commits before writing so a parallel generator never erases
+        # another generator's stage. Never use force push here.
+        remote_ref = _run(["git", "ls-remote", "--heads", "origin", self.branch], self.repo_dir, check=False).stdout.strip()
+        if remote_ref:
+            _run(["git", "fetch", "origin", self.branch], self.repo_dir)
+            _run(["git", "checkout", "-B", self.branch, f"origin/{self.branch}"], self.repo_dir)
+        else:
+            _run(["git", "checkout", "-B", self.branch], self.repo_dir)
         output = Path(output_dir)
         target = self.repo_dir / (
             "manifests" if stage_id == 0 else f"checkpoints/stage_{stage_id:02d}"
@@ -244,9 +252,12 @@ class GitManager:
         if staged.returncode == 0:
             return self.current_commit()
 
-        commit_hash = self.commit(f"dataset(stage-{stage_id:02d}): sync generated data")
+        commit_hash = self.commit(f"dataset(stage-{stage_id:02d}): sync generated images")
         if not self.push_with_auth(token):
-            raise RuntimeError("Push failed — see logs above for details (token redacted).")
+            raise RuntimeError(
+                "Image branch push was rejected. The remote changed concurrently; "
+                "pull/rebase and retry this stage without force-pushing."
+            )
         return commit_hash
 
     def current_commit(self) -> str:
