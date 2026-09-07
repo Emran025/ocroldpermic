@@ -191,7 +191,7 @@ class ReleaseManager:
         if git_manager is not None:
             commit_hash = git_manager.push_release(
                 stage_id=stage_id,
-                files=[str(pkg_path), str(manifest_path)],
+                files=[str(pkg_path), str(manifest_path), str(model_weights), str(onnx_path)],
                 version=version,
             )
 

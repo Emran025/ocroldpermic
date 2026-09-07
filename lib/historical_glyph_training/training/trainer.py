@@ -37,6 +37,7 @@ class YoloTrainer:
         self,
         resume: bool = False,
         on_epoch_end: Optional[Callable[[int, EpochMetrics], bool]] = None,
+        on_epoch_checkpoint: Optional[Callable[[int, str, EpochMetrics], None]] = None,
     ) -> str:
         """
         Run training. Returns path to best.pt weights.
@@ -49,7 +50,7 @@ class YoloTrainer:
             Called after each epoch. Return False to stop early.
         """
         try:
-            return self._train_ultralytics(resume, on_epoch_end)
+            return self._train_ultralytics(resume, on_epoch_end, on_epoch_checkpoint)
         except ImportError:
             print("[Trainer] ultralytics not found, using subprocess.")
             return self._train_subprocess(resume)
@@ -60,6 +61,7 @@ class YoloTrainer:
         self,
         resume: bool,
         on_epoch_end: Optional[Callable],
+        on_epoch_checkpoint: Optional[Callable],
     ) -> str:
         from ultralytics import YOLO
         from ultralytics.utils.callbacks.base import default_callbacks
@@ -86,6 +88,14 @@ class YoloTrainer:
                 continue_training = on_epoch_end(epoch, em)
                 if continue_training is False:
                     trainer.stop = True
+            if on_epoch_checkpoint is not None:
+                save_dir = Path(getattr(trainer, "save_dir", self.run_dir))
+                last_weights = save_dir / "weights" / "last.pt"
+                save_model = getattr(trainer, "save_model", None)
+                if callable(save_model):
+                    save_model()
+                if last_weights.is_file():
+                    on_epoch_checkpoint(epoch, str(last_weights), em)
 
         model.add_callback("on_train_epoch_end", _on_train_epoch_end)
 

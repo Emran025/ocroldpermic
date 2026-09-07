@@ -2,6 +2,9 @@
 from __future__ import annotations
 
 import os
+import hashlib
+import json
+import shutil
 import subprocess
 import tempfile
 from pathlib import Path
@@ -72,7 +75,7 @@ class GitManager:
         self._ensure_configured()
         ver = version or f"stage-{stage_id:02d}"
         message = f"release({ver}): promote validated model"
-        return self._commit_and_push(files, message, self.release_branch)
+        return self._commit_and_push(files, message, self.release_branch, publication_id=ver)
 
     def current_commit(self) -> str:
         """Return the current HEAD commit hash."""
@@ -149,19 +152,35 @@ class GitManager:
                 pass
 
     def _commit_and_push(
-        self, files: List[str], message: str, branch: str
+        self, files: List[str], message: str, branch: str,
+        publication_id: Optional[str] = None,
     ) -> str:
-        # Ensure we're on the right branch
-        self._run_git(["checkout", "-B", branch])
+        # Start from the remote tip of the requested branch. This is essential
+        # because one manager alternates between colab-checkpoints and the
+        # independent published-results branch during a training run.
+        auth_url = self._authenticated_url()
+        try:
+            subprocess.run(
+                ["git", "fetch", auth_url, f"{branch}:refs/remotes/origin/{branch}"],
+                cwd=self.work_dir, check=True, capture_output=True, text=True,
+            )
+            self._run_git(["checkout", "-B", branch, f"origin/{branch}"])
+        except subprocess.CalledProcessError:
+            # The first publication may create a branch that does not exist yet.
+            self._run_git(["checkout", "-B", branch])
 
-        # Copy files to work_dir and stage them
-        for f in files:
-            src = Path(f)
-            if src.exists():
-                dst = self.work_dir / src.name
-                import shutil
-                shutil.copy2(src, dst)
-                self._run_git(["add", str(dst.relative_to(self.work_dir))])
+        # Checkpoint epochs remain flat and isolated on colab-checkpoints.
+        # Accepted releases use a stable, data-only publication layout on
+        # colab-results and update the atomic latest.json pointer.
+        if publication_id:
+            self._stage_publication(files, publication_id)
+        else:
+            for f in files:
+                src = Path(f)
+                if src.exists():
+                    dst = self.work_dir / src.name
+                    shutil.copy2(src, dst)
+                    self._run_git(["add", str(dst.relative_to(self.work_dir))])
 
         # Check if there's anything to commit
         result = subprocess.run(
@@ -175,7 +194,6 @@ class GitManager:
         self._run_git(["commit", "-m", message])
 
         # Push with transient authenticated URL
-        auth_url = self._authenticated_url()
         try:
             subprocess.run(
                 # This manager owns only the requested training/release branch.
@@ -190,6 +208,70 @@ class GitManager:
             ) from None
 
         return self.current_commit()
+
+    def _stage_publication(self, files: List[str], publication_id: str) -> None:
+        """Stage a self-describing accepted model under artifacts/published."""
+        publication = self.work_dir / "artifacts" / "published" / publication_id
+        weights = publication / "weights"
+        weights.mkdir(parents=True, exist_ok=True)
+        release_source = None
+        copied_assets = []
+        for f in files:
+            src = Path(f)
+            if not src.is_file():
+                continue
+            if src.suffix.lower() == ".pt":
+                dst = weights / "best.pt"
+                web_weight = "weights/best.pt"
+            elif src.suffix.lower() == ".onnx":
+                dst = weights / "best.onnx"
+                web_weight = "weights/best.onnx"
+            elif src.suffix.lower() == ".ocrpkg":
+                dst = publication / "model.ocrpkg"
+                web_weight = None
+            elif src.name == "manifest.json":
+                release_source = src
+                continue
+            else:
+                dst = publication / src.name
+                web_weight = None
+            shutil.copy2(src, dst)
+            digest = hashlib.sha256(dst.read_bytes()).hexdigest()
+            copied_assets.append({"path": str(dst.relative_to(publication)), "sha256": digest, "bytes": dst.stat().st_size})
+            self._run_git(["add", str(dst.relative_to(self.work_dir))])
+
+        source = {}
+        if release_source and release_source.is_file():
+            try:
+                source = json.loads(release_source.read_text(encoding="utf-8"))
+            except (OSError, ValueError):
+                source = {}
+        release = {
+            "schema_version": 1,
+            "release_id": publication_id,
+            "publication_status": "published",
+            "created_at_utc": source.get("created_at", ""),
+            "source_commit": source.get("training_commit", ""),
+            "model_scope": "synthetic-old-permic-character-detection",
+            "class_names": source.get("class_names", []),
+            "class_count": len(source.get("class_names", [])),
+            "metrics": source.get("metrics", {}),
+            "assets": copied_assets,
+        }
+        if any(a["path"] == "weights/best.pt" for a in copied_assets):
+            release["web_weight"] = next(a for a in copied_assets if a["path"] == "weights/best.pt")
+        elif any(a["path"] == "weights/best.onnx" for a in copied_assets):
+            release["web_weight"] = next(a for a in copied_assets if a["path"] == "weights/best.onnx")
+        release_path = publication / "release.json"
+        release_path.write_text(json.dumps(release, indent=2, ensure_ascii=False), encoding="utf-8")
+        latest = self.work_dir / "artifacts" / "published" / "latest.json"
+        latest.write_text(json.dumps({
+            "schema_version": 1,
+            "release_id": publication_id,
+            "release_path": str(release_path.relative_to(self.work_dir)),
+            "release_sha256": hashlib.sha256(release_path.read_bytes()).hexdigest(),
+        }, indent=2), encoding="utf-8")
+        self._run_git(["add", str(release_path.relative_to(self.work_dir)), str(latest.relative_to(self.work_dir))])
 
     def _run_git(self, args: List[str]) -> str:
         result = subprocess.run(
