@@ -23,5 +23,10 @@
     "status": "done",
     "sample_count": 2850,
     "completed_at": "2026-09-07T18:40:11.277421+00:00"
+  },
+  "concept_06": {
+    "status": "done",
+    "sample_count": 2850,
+    "completed_at": "2026-09-07T18:51:26.214048+00:00"
   }
 }
