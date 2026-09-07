@@ -195,6 +195,78 @@ flutter test
 flutter run
 ```
 
+
+## 🔄 End-to-End Workflow and Repository Roles
+
+The project uses one GitHub repository with separate branches for code, generated datasets, training checkpoints, and published results. The branches are intentionally isolated so that generating images never rewrites model checkpoints and training never modifies the source glyph checkout.
+
+### Workflow overview
+
+```mermaid
+flowchart LR
+    A[main<br/>Code + SVG glyphs] --> B[progressive_generation.ipynb]
+    B -->|Generate one concept| C[colab-generated-images<br/>Images + labels + metadata]
+    C --> D[adaptive_training.ipynb]
+    D -->|Save and publish every epoch| E[colab-checkpoints<br/>Model checkpoints]
+    D -->|Accepted stage release| F[colab-results<br/>Published models + manifests]
+    F --> G[archival_manuscript_synthesis.ipynb]
+    G --> H[Final synthetic documents + evaluation]
+```
+
+### Branch and checkout responsibilities
+
+| Branch | Purpose | Typical Colab checkout | Contents written there |
+|---|---|---|---|
+| `main` | Canonical source code and rendering assets | `/content/repo` | Python packages, notebooks, SVG glyphs, configuration, and tests |
+| `colab-generated-images` | Generated training data only | `/content/image-repo` | `datasets/stage_XX/` with PNG images, YOLO labels, metadata, and stage manifests |
+| `colab-checkpoints` | Intermediate model training state | `/content/checkpoint-repo` or the training publisher checkout | Epoch checkpoints and checkpoint metadata, written after each epoch |
+| `colab-results` | Accepted/released model artifacts | `/content/result-repo` | Published model packages, release manifests, and final-stage artifacts |
+
+The names above are Git branches in `Emran025/ocroldpermic`; they are not separate source-code projects. The `main` checkout is read-only during image rendering, while the image and checkpoint checkouts are the write targets for their respective pipelines.
+
+### 1. Source and glyph preparation
+
+The notebooks first check out `main` and add its `lib/` directory to the Python path. `GlyphStudio` reads the SVG glyph collections from `/content/repo/font/svg`. This checkout provides the rendering implementation and glyph assets; it is not used as the destination for generated images or model files.
+
+### 2. Progressive dataset generation
+
+`progressive_generation.ipynb` builds the 12-stage curriculum. It uses `/content/repo` for code and `/content/image-repo` for the `colab-generated-images` branch. Each stage is divided into concepts. For every concept, the executor generates the image-label pairs, verifies that all expected PNG and YOLO label files exist, writes a concept completion marker, and invokes the push callback. The callback synchronizes the stage directory and pushes it to `colab-generated-images` before the next concept proceeds.
+
+The final stage manifest is pushed again after stage validation and approval. This final push is additive: it does not replace the per-concept persistence mechanism. A master curriculum manifest is published after the notebook collects the completed stage manifests.
+
+### 3. Dataset-to-training handoff
+
+`adaptive_training.ipynb` reads completed stages from `colab-generated-images`, validates their manifests, creates leakage-free train/validation/reserve splits, and trains the model in curriculum order. It should not read generated data from `main`, and it should not write datasets to `colab-checkpoints` or `colab-results`.
+
+### 4. Checkpoint and release flow
+
+During training, the epoch callback records metrics and updates the training session. The checkpoint callback saves and publishes a checkpoint after each completed epoch to `colab-checkpoints`, together with metadata such as stage, epoch, metrics, source commit, and whether the checkpoint is the current best model.
+
+When a stage passes its acceptance criteria, the release manager packages the accepted model and publishes the release artifacts to `colab-results`. Failed or rejected stages remain available through their checkpoints and session/audit state without being treated as released models.
+
+### 5. Final synthesis and evaluation
+
+`archival_manuscript_synthesis.ipynb` reads the code and glyph assets from `main`, discovers the latest available released model from the results/checkpoint workflow, generates the final synthetic manuscript pages, validates labels and model classes, runs inference, and writes the final experiment report. Its outputs are research artifacts and must not be interpreted as authentic historical documents.
+
+### Resume and recovery behavior
+
+Dataset generation is resumable at stage/concept granularity. `generation_state.json` and the per-concept markers allow a restarted notebook to skip verified concepts and continue from the first incomplete concept. A stage with an existing final manifest is skipped as complete.
+
+Training publishes a checkpoint after every epoch and records progress in the training session and audit log. The published checkpoints are the recovery source for interrupted training. A resumed training run must select the latest compatible checkpoint and invoke the trainer with `resume=True`; merely having a checkpoint on `colab-checkpoints` does not by itself resume a stopped process. The current workflow therefore distinguishes **checkpoint publication after each epoch** from **automatic trainer resumption**, which must be explicitly enabled by the training run.
+
+### Operational checks
+
+Before running a notebook, verify the branch separation and working directories:
+
+```python
+print(f"Code:   {CODE_BRANCH} -> {REPO_DIR}")
+print(f"Images: {IMAGE_BRANCH} -> {IMAGE_REPO_DIR}")
+print(f"Model checkpoints: {CHECKPOINT_BRANCH}")
+print(f"Results: {RESULT_BRANCH}")
+```
+
+Expected values are `main` for `CODE_BRANCH`, `colab-generated-images` for `IMAGE_BRANCH`, `colab-checkpoints` for `CHECKPOINT_BRANCH`, and `colab-results` for `RESULT_BRANCH`.
+
 ---
 
 ## 📜 OCR Package Specification (`.ocrpkg`)
