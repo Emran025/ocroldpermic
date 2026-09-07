@@ -24,6 +24,7 @@ class StageManifest:
     generation_time_seconds: float
     styles_used: List[str] = field(default_factory=list)
     concept_summaries: List[dict] = field(default_factory=list)
+    dataset_contract: Dict[str, object] = field(default_factory=dict)
 
     @property
     def total_samples(self) -> int:
@@ -42,6 +43,7 @@ class StageManifest:
         d2["resolution_range"] = tuple(d2.get("resolution_range", (0, 0)))
         d2.setdefault("styles_used", [])
         d2.setdefault("concept_summaries", [])
+        d2.setdefault("dataset_contract", {})
         return StageManifest(**d2)
 
 

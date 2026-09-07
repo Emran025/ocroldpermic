@@ -7,6 +7,7 @@ import json
 import logging
 import time
 from collections import Counter
+from datetime import datetime, timezone
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from pathlib import Path
 from typing import Callable, List, Optional
@@ -282,6 +283,7 @@ class CurriculumExecutor:
         plan,
         state_path: Path,
         progress_callback: Optional[Callable[[int, int, str], None]] = None,
+        concept_callback: Optional[Callable[[int, int, Path], None]] = None,
     ) -> dict:
         """
         Generate all concepts for one stage, with resume support.
@@ -320,9 +322,18 @@ class CurriculumExecutor:
             c_id = cp.concept.concept_id
             state_key = f"concept_{c_id:02d}"
 
-            if state.get(state_key) == "done":
-                log.info("Skipping concept %d (already done)", c_id)
+            marker_path = plan.output_dir / "metadata" / f"concept_{c_id:02d}.json"
+            marker = state.get(state_key)
+            if marker == "done":
+                marker = {"status": "done"}
+            expected = int(getattr(cp, "sample_count", 0))
+            existing = list((plan.output_dir / "images").glob(f"{plan.stage.stage_id:02d}_{c_id:02d}_*.png"))
+            labels_ok = all((plan.output_dir / "labels" / f"{p.stem}.txt").is_file() for p in existing)
+            if isinstance(marker, dict) and marker.get("status") == "done" and len(existing) >= expected and labels_ok:
+                log.info("Skipping concept %d (verified persisted output)", c_id)
                 continue
+            if marker == "done":
+                log.warning("Concept %d marker exists but outputs are incomplete; regenerating", c_id)
 
             log.info("Generating concept %d: %s (%d samples)", c_id, cp.concept.name, cp.sample_count)
 
@@ -371,19 +382,42 @@ class CurriculumExecutor:
                     cls_id = max(0, int(cp_val) - 0x10350)
                     class_counter[cls_id] += 1
 
-            # Mark concept done
-            state[state_key] = "done"
-            state_path.write_text(json.dumps(state, indent=2))
+            # A concept is complete only after every expected image has a label.
+            persisted = list((plan.output_dir / "images").glob(f"{plan.stage.stage_id:02d}_{c_id:02d}_*.png"))
+            if len(persisted) < expected or not all((plan.output_dir / "labels" / f"{p.stem}.txt").is_file() for p in persisted):
+                raise RuntimeError(f"Concept {c_id} incomplete: {len(persisted)}/{expected} image-label pairs persisted")
+            state[state_key] = {
+                "status": "done", "sample_count": len(persisted),
+                "completed_at": datetime.now(timezone.utc).isoformat(),
+            }
+            marker_path.parent.mkdir(parents=True, exist_ok=True)
+            marker_tmp = marker_path.with_suffix(".tmp")
+            marker_tmp.write_text(json.dumps(state[state_key], indent=2), encoding="utf-8")
+            marker_tmp.replace(marker_path)
+            state_tmp = state_path.with_suffix(".tmp")
+            state_tmp.write_text(json.dumps(state, indent=2), encoding="utf-8")
+            state_tmp.replace(state_path)
+            if concept_callback:
+                concept_callback(plan.stage.stage_id, c_id, plan.output_dir)
 
+        # Rebuild the summary from all persisted metadata, including resumed concepts.
+        all_metadata = []
+        for meta_path in sorted((plan.output_dir / "metadata").glob("*.json")):
+            if meta_path.name.startswith("concept_"): continue
+            try: all_metadata.append(json.loads(meta_path.read_text(encoding="utf-8")))
+            except (OSError, json.JSONDecodeError): continue
+        class_counter = Counter()
+        materials_used, families_used, styles_used = set(), set(), set()
+        for m in all_metadata:
+            if m.get("operation"): materials_used.add(m["operation"])
+            if m.get("source_family"): families_used.add(m["source_family"])
+            if m.get("source_style"): styles_used.add(m["source_style"])
+            if m.get("codepoint") is not None: class_counter[max(0, int(m["codepoint"]) - 0x10350)] += 1
         elapsed = time.time() - t0
         return {
-            "stage_id": plan.stage.stage_id,
-            "stage_name": plan.stage.name,
-            "total_images": len(all_metadata),
-            "class_distribution": dict(class_counter),
-            "materials_used": sorted(materials_used),
-            "families_used": sorted(families_used),
-            "styles_used": sorted(styles_used),
-            "generation_time_seconds": elapsed,
+            "stage_id": plan.stage.stage_id, "stage_name": plan.stage.name,
+            "total_images": len(all_metadata), "class_distribution": dict(class_counter),
+            "materials_used": sorted(materials_used), "families_used": sorted(families_used),
+            "styles_used": sorted(styles_used), "generation_time_seconds": elapsed,
             "acceleration": self.backend_info,
         }

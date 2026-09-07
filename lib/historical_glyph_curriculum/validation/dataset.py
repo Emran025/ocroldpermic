@@ -28,7 +28,10 @@ class ValidationReport:
     def is_valid(self) -> bool:
         return (
             len(self.missing_labels) == 0
+            and len(self.missing_images) == 0
+            and len(self.empty_labels) == 0
             and len(self.invalid_boxes) == 0
+            and len(self.issues) == 0
             and self.total_images > 0
         )
 
@@ -60,7 +63,9 @@ class ValidationReport:
 class DatasetValidator:
     """Validate a YOLO-format dataset directory pair (images/ + labels/)."""
 
-    def validate(self, images_dir: Path, labels_dir: Path) -> ValidationReport:
+    def validate(
+        self, images_dir: Path, labels_dir: Path, expected_class_count: int | None = None
+    ) -> ValidationReport:
         """
         Scan images/ and labels/ directories.
 
@@ -114,6 +119,11 @@ class DatasetValidator:
                     continue
 
                 # Validate
+                if expected_class_count is not None and not (0 <= cls_id < expected_class_count):
+                    report.invalid_boxes.append(stem)
+                    report.issues.append(
+                        f"{stem}: class id {cls_id} outside expected range [0, {expected_class_count})"
+                    )
                 if not (0 <= cx <= 1 and 0 <= cy <= 1 and 0 < w <= 1 and 0 < h <= 1):
                     report.invalid_boxes.append(stem)
                     report.issues.append(f"{stem}: invalid bbox cx={cx:.3f} cy={cy:.3f} w={w:.3f} h={h:.3f}")

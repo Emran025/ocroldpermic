@@ -100,7 +100,7 @@ def detect_resources() -> ResourceProfile:
     disk_free_gb = disk.free / (1024 ** 3)
 
     # Recommend workers: utilize available logical cores effectively
-    recommended_workers = min(8, max(2, cpu_logical))
+    recommended_workers = min(32, max(2, cpu_logical * 2))
 
     # Recommend batch size based on RAM
     extra_ram = max(0.0, ram_gb - 4.0)
