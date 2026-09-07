@@ -105,9 +105,15 @@ class CurriculumExecutor:
         workers: int | str = "auto",
         batch_size: int | str = "auto",
         canonical_size: tuple[int, int] = (128, 128),
+        backend: str = "cpu",
+        gpu_batch_size: int = 32,
     ) -> None:
         self.glyph_root = str(Path(glyph_root).resolve())
         self.canonical_size = canonical_size
+        from ..acceleration import detect_backend
+        self.backend_info = detect_backend(backend)
+        self.backend = self.backend_info["backend"]
+        self.gpu_batch_size = int(max(1, gpu_batch_size))
 
         if workers == "auto" or batch_size == "auto":
             from ..resources import detect_resources, auto_tune
@@ -121,7 +127,7 @@ class CurriculumExecutor:
             self.workers = int(workers)
             self.batch_size = int(batch_size)
 
-        log.info("CurriculumExecutor: %d workers, batch=%d", self.workers, self.batch_size)
+        log.info("CurriculumExecutor: %d workers, batch=%d, backend=%s", self.workers, self.batch_size, self.backend)
 
     def generate_concept(
         self,
@@ -338,6 +344,17 @@ class CurriculumExecutor:
 
             all_metadata.extend(meta_list)
 
+            # Optional batched CUDA post-processing. CPU SVG parsing, material
+            # simulation, geometry, labels, and the reproducibility path remain unchanged.
+            if self.backend == "cuda" and meta_list:
+                from ..acceleration import process_saved_images
+                acceleration = process_saved_images(
+                    [m["img_path"] for m in meta_list if m.get("img_path")],
+                    backend="cuda", batch_size=self.gpu_batch_size,
+                )
+                for m in meta_list:
+                    m["acceleration_backend"] = acceleration["backend"]
+
             # Aggregate stats
             for m in meta_list:
                 op = m.get("operation", "")
@@ -368,4 +385,5 @@ class CurriculumExecutor:
             "families_used": sorted(families_used),
             "styles_used": sorted(styles_used),
             "generation_time_seconds": elapsed,
+            "acceleration": self.backend_info,
         }

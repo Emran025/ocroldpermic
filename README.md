@@ -264,3 +264,7 @@ package.ocrpkg (ZIP)
 ## 📄 License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+### Optional CPU/CUDA generation backend
+
+The stable SVG rasterizer, material simulation, geometric transforms, and YOLO annotation path remain CPU-based so that labels and reproducibility are unchanged. `CurriculumExecutor(backend="cpu")` is the reference mode. `CurriculumExecutor(backend="auto")` selects CUDA when PyTorch reports an available GPU and otherwise falls back to CPU. In CUDA mode, generated images are processed in batches with tensor operations on the GPU; labels, metadata, stage state, validation, approval, and GitHub checkpoint synchronization remain unchanged. This is a safe acceleration layer, not a claim that the entire SVG renderer is CUDA-native.

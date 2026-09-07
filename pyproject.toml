@@ -25,6 +25,7 @@ dependencies = [
 [project.optional-dependencies]
 dev = ["pytest>=7.0", "pytest-cov"]
 colab = ["google-colab"]
+gpu = ["torch>=2.2"]
 
 [tool.setuptools.packages.find]
 where = ["lib"]
