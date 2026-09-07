@@ -78,6 +78,19 @@ def generate_document(
     page = _fit_background(Path(background_path) if background_path else None, (spec.width, spec.height), rng)
     annotation = YOLOAnnotation(image_width=spec.width, image_height=spec.height)
     records: list[dict] = []
+    # Faint ruled lines and age/ink spots evoke the supplied codex while
+    # remaining outside the OCR annotation layer.
+    draw = __import__("PIL.ImageDraw", fromlist=["ImageDraw"]).ImageDraw.Draw(page, "RGBA")
+    margin_x = int(spec.width * 0.13)
+    top = int(spec.height * 0.12)
+    line_gap = int((spec.height * 0.72) / max(spec.lines, 1))
+    for line_idx in range(spec.lines + 2):
+        yy = top - line_gap // 2 + line_idx * line_gap
+        draw.line((margin_x - 20, yy, spec.width - margin_x + 20, yy), fill=(105, 72, 48, int(rng.integers(14, 34))), width=1)
+    for _ in range(max(18, spec.width // 45)):
+        cx = int(rng.integers(20, spec.width - 20)); cy = int(rng.integers(20, spec.height - 20))
+        rx = int(rng.integers(2, 18)); ry = int(rng.integers(2, 12))
+        draw.ellipse((cx-rx, cy-ry, cx+rx, cy+ry), fill=(92, 54, 30, int(rng.integers(5, 24))))
     margin_x = int(spec.width * 0.13)
     top = int(spec.height * 0.12)
     line_gap = int((spec.height * 0.72) / max(spec.lines, 1))
@@ -91,6 +104,7 @@ def generate_document(
             char = alphabet[int(rng.integers(0, len(alphabet)))]
             result = studio.render(
                 char=char, background=(155, 130, 95), operation=spec.material,
+                family=spec.handwriting_family, style=spec.handwriting_style,
                 rotation=(-7, 7), perspective=True, occlusion="mild",
                 glyph_scale=float(rng.uniform(0.30, 0.43)),
                 canvas_size=(150, 150), seed=int(rng.integers(0, 2**31 - 1)),
