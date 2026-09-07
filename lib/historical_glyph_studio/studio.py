@@ -122,12 +122,19 @@ class GlyphStudio:
         return self._repo.families
 
     def available_glyph_records(self) -> List[GlyphRecord]:
-        """Return all discovered GlyphRecord objects (342 shapes)."""
+        """Return all discovered glyph-shape records across families/styles."""
         return list(self._repo.records)
+
+    def available_class_names(self) -> List[str]:
+        """Return one model class per Unicode codepoint, independent of font variant."""
+        return [f"U+{cp:04X}" for cp in self._repo.codepoints]
 
     def available_glyph_targets(self) -> List[Dict[str, Any]]:
         """
-        Return structured target descriptors for all 342 glyph variants.
+        Return structured target descriptors for all glyph variants.
+
+        These targets are rendering variants only. They must not be used as the
+        model class vocabulary; use ``available_class_names()`` for that.
         Each dict contains: char, codepoint, family, style, unicode_name, path.
         """
         return [
