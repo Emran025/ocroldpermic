@@ -99,9 +99,8 @@ def detect_resources() -> ResourceProfile:
     disk = shutil.disk_usage(os.getcwd())
     disk_free_gb = disk.free / (1024 ** 3)
 
-    # Recommend workers: rendering is CPU-bound (SVG rasterization)
-    # Don't oversaturate; leave cores for I/O and OS
-    recommended_workers = min(4, max(1, cpu_physical // 2))
+    # Recommend workers: utilize available logical cores effectively
+    recommended_workers = min(8, max(2, cpu_logical))
 
     # Recommend batch size based on RAM
     extra_ram = max(0.0, ram_gb - 4.0)

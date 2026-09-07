@@ -103,6 +103,8 @@ def render_one_sample(args: dict) -> Optional[dict]:
             max_skew=float(args.get("perspective_skew", 0.0)),
             jpeg_quality=args.get("jpeg_quality"),
         )
+        if args.get("glyph_color") is not None:
+            render_kwargs["color"] = args["glyph_color"]
 
         if is_sequence and len(chars) > 1:
             result = studio.render_sequence(
@@ -111,6 +113,7 @@ def render_one_sample(args: dict) -> Optional[dict]:
                 seed=seed,
                 background=render_kwargs["background"],
                 operation=render_kwargs["operation"],
+                color=args.get("glyph_color"),
                 rotation=rotation,
                 families=args.get("families"),
                 styles=args.get("styles"),
@@ -118,12 +121,12 @@ def render_one_sample(args: dict) -> Optional[dict]:
         else:
             result = studio.render(**{**render_kwargs, "char": chars[0] if chars else char})
 
-        # Save image
+        # Save image (lossless fast PNG compression)
         img_path = Path(args["output_img_path"])
         img_path.parent.mkdir(parents=True, exist_ok=True)
 
         from PIL import Image as PILImage
-        PILImage.fromarray(result.image).save(img_path)
+        PILImage.fromarray(result.image).save(img_path, compress_level=1)
 
         # Save label
         lbl_path = Path(args["output_lbl_path"])

@@ -11,9 +11,14 @@ from ..config.models import MaterialName, RenderConfig
 
 _REGISTRY: dict[str, type[Material]] = {
     "engraved": EngravedMaterial,
+    "carved": EngravedMaterial,
     "raised": RaisedMaterial,
     "faded_black": FadedMaterial,
     "faded_white": FadedMaterial,
+    "faded": FadedMaterial,
+    "ink": FadedMaterial,
+    "paint": FadedMaterial,
+    "pigment": FadedMaterial,
     "glass": GlassMaterial,
 }
 
@@ -31,7 +36,7 @@ def get_material(name: str) -> Material:
 def resolve_material(name: MaterialName, rng: np.random.Generator) -> str:
     """Resolve 'random' to a concrete material name."""
     if name == "random":
-        concrete = list(m for m in _REGISTRY if m != "random")
+        concrete = ["engraved", "raised", "faded_black", "faded_white", "ink", "paint", "glass"]
         return str(rng.choice(concrete))
     return name
 

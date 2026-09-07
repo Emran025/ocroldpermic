@@ -196,22 +196,26 @@ class RenderingPipeline:
         mat_name = resolve_material(config.material, rng)
         material = get_material(mat_name)
 
-        # Build material-specific config
         mat_kwargs: dict = {}
-        if mat_name == "engraved":
+        if mat_name in ("engraved", "carved"):
             mat_kwargs["config"] = config.engraving
         elif mat_name == "raised":
             mat_kwargs["config"] = config.raised
-        elif mat_name in ("faded_black", "faded_white"):
+        elif mat_name in ("faded_black", "faded_white", "faded", "ink", "paint", "pigment"):
+            target_color = config.faded.color
+            if mat_name == "faded_white":
+                target_color = (255, 255, 255)
+            elif mat_name == "faded_black" and target_color == (0, 0, 0):
+                target_color = (25, 25, 25)
+            elif hasattr(config, "color") and config.color and target_color == (0, 0, 0):
+                target_color = config.color
             faded_cfg = FadedConfig(
-                color=config.faded.color if mat_name == "faded_black" else (255, 255, 255),
+                color=target_color,
                 opacity=config.faded.opacity,
                 blur_sigma=config.faded.blur_sigma,
                 density_noise=config.faded.density_noise,
                 local_fading=config.faded.local_fading,
             )
-            if mat_name == "faded_white":
-                faded_cfg.color = (255, 255, 255)
             mat_kwargs["config"] = faded_cfg
         elif mat_name == "glass":
             mat_kwargs["config"] = config.glass
@@ -366,20 +370,25 @@ class RenderingPipeline:
             mat_name = resolve_material(config.material, rng)
             material = get_material(mat_name)
             mat_kwargs: dict = {}
-            if mat_name == "engraved":
+            if mat_name in ("engraved", "carved"):
                 mat_kwargs["config"] = config.engraving
             elif mat_name == "raised":
                 mat_kwargs["config"] = config.raised
-            elif mat_name in ("faded_black", "faded_white"):
+            elif mat_name in ("faded_black", "faded_white", "faded", "ink", "paint", "pigment"):
+                target_color = config.faded.color
+                if mat_name == "faded_white":
+                    target_color = (255, 255, 255)
+                elif mat_name == "faded_black" and target_color == (0, 0, 0):
+                    target_color = (25, 25, 25)
+                elif hasattr(config, "color") and config.color and target_color == (0, 0, 0):
+                    target_color = config.color
                 faded_cfg = FadedConfig(
-                    color=config.faded.color if mat_name == "faded_black" else (255, 255, 255),
+                    color=target_color,
                     opacity=config.faded.opacity,
                     blur_sigma=config.faded.blur_sigma,
                     density_noise=config.faded.density_noise,
                     local_fading=config.faded.local_fading,
                 )
-                if mat_name == "faded_white":
-                    faded_cfg.color = (255, 255, 255)
                 mat_kwargs["config"] = faded_cfg
             elif mat_name == "glass":
                 mat_kwargs["config"] = config.glass

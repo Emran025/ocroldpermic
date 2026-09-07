@@ -33,6 +33,15 @@ def make_background(spec: BackgroundSpec) -> Background:
       - NumPy array → ImageBackground
     """
     _SURFACE_NAMES = {"stone", "paper", "wood", "sand", "plaster", "metal"}
+    _SURFACE_ALIASES = {
+        "parchment": "paper",
+        "aged_document": "paper",
+        "manuscript": "paper",
+        "inscription": "stone",
+        "stone_relief": "stone",
+        "damaged": "plaster",
+        "glass_scene": "metal",
+    }
 
     if isinstance(spec, tuple):
         rgb = spec[:3]
@@ -41,6 +50,8 @@ def make_background(spec: BackgroundSpec) -> Background:
     if isinstance(spec, str):
         if spec in _SURFACE_NAMES:
             return ProceduralBackground(surface=spec)  # type: ignore[arg-type]
+        if spec in _SURFACE_ALIASES:
+            return ProceduralBackground(surface=_SURFACE_ALIASES[spec])  # type: ignore[arg-type]
         # Treat as file path
         return ImageBackground(source=Path(spec))
 

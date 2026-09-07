@@ -249,10 +249,11 @@ class GlyphStudio:
         )
 
         # --- Material sub-configs from kwargs ---
+        color = kwargs.get("color", kwargs.get("glyph_color", (40, 40, 40)))
         engraving_cfg = kwargs.get("engraving", EngravingConfig())
         raised_cfg = kwargs.get("raised_config", RaisedConfig())
         faded_cfg = kwargs.get("faded_config", FadedConfig(
-            color=(0, 0, 0),
+            color=color,
             opacity=kwargs.get("opacity", 0.4),
         ))
         glass_cfg = kwargs.get("glass_config", GlassConfig())
@@ -267,6 +268,7 @@ class GlyphStudio:
             canvas_size=canvas_size,
             glyph_scale=glyph_scale,
             material=operation,
+            color=color,
             rotation=rot_cfg,
             perspective=persp_cfg,
             engraving=engraving_cfg,
@@ -318,9 +320,16 @@ class GlyphStudio:
             RotationConfig(enabled=True, fixed_deg=float(rotation)) if isinstance(rotation, (int, float)) else \
             RotationConfig(enabled=True, min_deg=float(rotation[0]), max_deg=float(rotation[1]))
 
+        color = kwargs.get("color", kwargs.get("glyph_color", (40, 40, 40)))
+        faded_cfg = kwargs.get("faded_config", FadedConfig(
+            color=color,
+            opacity=kwargs.get("opacity", 0.4),
+        ))
         config = RenderConfig(
             canvas_size=canvas_size,
             material=operation,
+            color=color,
+            faded=faded_cfg,
             rotation=rot_cfg,
             seed=seed,
         )

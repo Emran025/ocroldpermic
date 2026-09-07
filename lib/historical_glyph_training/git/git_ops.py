@@ -90,6 +90,28 @@ class GitManager:
         expected = ["pyproject.toml"]
         return all((self.work_dir / f).exists() for f in expected)
 
+    def pull(self, branch: Optional[str] = None) -> bool:
+        """Fetch and pull the latest changes from remote."""
+        target_branch = branch or self.checkpoint_branch
+        self._ensure_configured()
+        try:
+            auth_url = self._authenticated_url()
+            subprocess.run(
+                ["git", "fetch", auth_url, f"{target_branch}:{target_branch}"],
+                cwd=self.work_dir, capture_output=True, text=True, check=True
+            )
+            self._run_git(["checkout", target_branch])
+            return True
+        except Exception:
+            try:
+                self._run_git(["fetch", "--all"])
+                self._run_git(["checkout", target_branch])
+                self._run_git(["pull", "--rebase", "origin", target_branch])
+                return True
+            except Exception as e:
+                print(f"[Git] Pull notice: {e}")
+                return False
+
     # ── Private ───────────────────────────────────────────────────────────────
 
     def _configure_git(self) -> None:

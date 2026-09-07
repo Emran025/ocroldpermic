@@ -43,6 +43,12 @@ def _build_sample_args(
         rng = np.random.default_rng(seed)
         bg = bg[int(rng.integers(0, len(bg)))]
 
+    glyph_col = getattr(concept, "glyph_color", None)
+    glyph_cols = getattr(concept, "glyph_colors", None)
+    if glyph_cols:
+        rng_c = np.random.default_rng(seed)
+        glyph_col = glyph_cols[int(rng_c.integers(0, len(glyph_cols)))]
+
     return {
         "glyph_root": glyph_root,
         "char": char,
@@ -50,6 +56,7 @@ def _build_sample_args(
         "is_sequence": is_sequence,
         "background": bg,
         "operation": concept.material or "random",
+        "glyph_color": glyph_col,
         "rotation_min": concept.rotation_deg[0],
         "rotation_max": concept.rotation_deg[1],
         "perspective": concept.perspective,

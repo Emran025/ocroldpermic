@@ -52,7 +52,13 @@ class DatasetLoader:
             self.dataset_root / f"stage_{stage_id:02d}",
             self.dataset_root / f"stage{stage_id:02d}",
             self.dataset_root / f"stage_{stage_id}",
+            self.dataset_root / "checkpoints" / f"stage_{stage_id:02d}",
+            Path("/content/checkpoint-repo") / "checkpoints" / f"stage_{stage_id:02d}",
+            Path("/content/checkpoint-repo") / f"stage_{stage_id:02d}",
         ]
+        for c in candidates:
+            if c.is_dir() and ((c / "images").is_dir() or (c / "manifest.json").is_file() or (c / "split_manifest.json").is_file()):
+                return str(c)
         for c in candidates:
             if c.is_dir():
                 return str(c)
