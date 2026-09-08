@@ -1,0 +1,25 @@
+{
+  "stage": 1,
+  "epoch": 3,
+  "global_step": 3,
+  "map50": 0.99339,
+  "map50_95": 0.98276,
+  "precision": 0.98703,
+  "recall": 0.98844,
+  "train_loss": 5.380211353302002,
+  "val_loss": 0.0,
+  "class_metrics": {},
+  "training_config": {
+    "epochs_per_stage": 50,
+    "image_size": 640
+  },
+  "dataset_stage": 1,
+  "dataset_version": "2026-09-08T00:31:02.305856+00:00",
+  "model_source_commit": "59148aa55c0f0518163a0dfbc5da26f678ecf533",
+  "checkpoint_commit": "",
+  "timestamp": "2026-09-08T01:04:07.718684+00:00",
+  "random_seed": 42,
+  "runtime": {},
+  "is_best": true,
+  "remediation_round": 0
+}
