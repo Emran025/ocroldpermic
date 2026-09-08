@@ -110,6 +110,7 @@ def render_one_sample(args: dict) -> Optional[dict]:
             erosion_iterations=int(args.get("erosion_iters", 0)),
             max_skew=float(args.get("perspective_skew", 0.0)),
             jpeg_quality=args.get("jpeg_quality"),
+            edge_bleed=float(args.get("edge_bleed", 0.0)),
         )
         if args.get("glyph_color") is not None:
             render_kwargs["color"] = args["glyph_color"]

@@ -71,6 +71,7 @@ def _build_sample_args(
         "fading_alpha": concept.fading_alpha,
         "jpeg_quality": concept.jpeg_quality,
         "glyph_scale": concept.glyph_scale,
+        "edge_bleed": getattr(concept, "edge_bleed", 0.0),
         "canvas_size": concept.canvas_size,
         "family": family,
         "style": style,

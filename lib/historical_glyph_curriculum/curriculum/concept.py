@@ -31,6 +31,7 @@ class ConceptTemplate:
     spacing_px: Union[int, Tuple[int, int]] = 15
     glyph_color: Optional[Tuple[int, int, int]] = None
     glyph_colors: Optional[List[Tuple[int, int, int]]] = None
+    edge_bleed: float = 0.0
 
 def make_concept(concept_id: int, name: str, **kwargs) -> ConceptTemplate:
     """Create a ConceptTemplate with sensible defaults."""
@@ -60,6 +61,7 @@ def make_concept(concept_id: int, name: str, **kwargs) -> ConceptTemplate:
         'spacing_px': 15,
         'glyph_color': None,
         'glyph_colors': None,
+        'edge_bleed': 0.0,
     }
     defaults.update(kwargs)
     return ConceptTemplate(concept_id=concept_id, name=name, **defaults)

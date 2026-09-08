@@ -291,6 +291,7 @@ class GlyphStudio:
 
         # Store background spec on config (pipeline reads it)
         config.background = background  # type: ignore[attr-defined]
+        config.edge_bleed = float(kwargs.get("edge_bleed", 0.0))  # type: ignore[attr-defined]
 
         # Resolve glyph
         resolver = GlyphResolver(self._repo, rng)
