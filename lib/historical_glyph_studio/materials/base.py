@@ -61,7 +61,21 @@ class Material(ABC):
 
     @staticmethod
     def _to_uint8(img: np.ndarray) -> np.ndarray:
-        return np.clip(img * 255.0, 0, 255).astype(np.uint8)
+        """Convert a normalized image to uint8 without leaking non-finite values.
+
+        Some degenerate masks (for example, an empty glyph after aggressive
+        geometric/degradation operations) can make intermediate material
+        calculations produce NaN or Inf.  NumPy warns when those values are
+        cast directly to ``uint8`` and the resulting pixels are undefined.
+        Treat NaN as black and clamp infinities to the valid image range.
+        """
+        scaled = np.nan_to_num(
+            np.asarray(img, dtype=np.float32) * 255.0,
+            nan=0.0,
+            posinf=255.0,
+            neginf=0.0,
+        )
+        return np.clip(scaled, 0, 255).astype(np.uint8)
 
     @staticmethod
     def _alpha_composite(
