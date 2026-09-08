@@ -7,8 +7,10 @@ to disk, logged, or stored in git configuration.
 from __future__ import annotations
 
 import logging
+import json
 import re
 import subprocess
+import shutil
 from pathlib import Path
 from typing import Optional
 
@@ -131,12 +133,12 @@ class GitManager:
         to git config, disk, or printed.
         """
         auth_url = self._auth_url(token)
-        # Use a transient remote push without modifying stored config
-        # This manager owns only its configured branch (the image branch in the
-        # generation notebook). Force-push is intentionally scoped to that branch
-        # so it can never rewrite training checkpoints or release history.
+        # Use a transient remote push without modifying stored config.  This is
+        # deliberately a normal fast-forward push: two image generators may
+        # have cloned the same remote tip, and neither is allowed to erase the
+        # other's completed concepts.
         result = subprocess.run(
-            ["git", "push", "--force", auth_url, f"HEAD:{self.branch}"],
+            ["git", "push", auth_url, f"HEAD:{self.branch}"],
             cwd=str(self.repo_dir),
             capture_output=True,
             text=True,
@@ -146,6 +148,83 @@ class GitManager:
             log.error("Push failed: %s", err)
             return False
         return True
+
+    def _rebase_onto_remote(self) -> bool:
+        """Fetch the branch and rebase the local commit onto its newest tip.
+
+        A failed rebase is aborted immediately.  In particular, we do not use
+        ``checkout --theirs`` or any other conflict strategy that could silently
+        discard another generator's files.
+        """
+        _run(["git", "fetch", "origin", self.branch], self.repo_dir)
+        result = _run(
+            ["git", "rebase", f"origin/{self.branch}"],
+            self.repo_dir,
+            check=False,
+        )
+        if result.returncode == 0:
+            return True
+        _run(["git", "rebase", "--abort"], self.repo_dir, check=False)
+        err = _redact(result.stderr or result.stdout or "rebase conflict")
+        log.error("Cannot reconcile image-branch changes safely: %s", err)
+        return False
+
+    def _push_with_reconciliation(self, token: str, attempts: int = 3) -> bool:
+        """Push without overwriting remote commits, rebasing after a race."""
+        for attempt in range(1, attempts + 1):
+            if self.push_with_auth(token):
+                return True
+            if attempt == attempts:
+                break
+            if not self._rebase_onto_remote():
+                return False
+        return False
+
+    def _copy_additive_tree(self, source: Path, destination: Path) -> None:
+        """Merge generated files without replacing files already on the branch.
+
+        Concept output is append-only. Existing identical files are ignored;
+        differing files at the same path are reported as a real collision so
+        the caller can stop safely instead of silently losing either version.
+        ``generation_state.json`` is merged by concept key because two workers
+        commonly complete different concepts at the same time.
+        """
+        source = Path(source)
+        destination = Path(destination)
+        for src in sorted(p for p in source.rglob("*") if p.is_file()):
+            relative = src.relative_to(source)
+            dst = destination / relative
+            dst.parent.mkdir(parents=True, exist_ok=True)
+            if not dst.exists():
+                shutil.copy2(src, dst)
+                continue
+            if src.name == "generation_state.json":
+                try:
+                    remote_state = json.loads(dst.read_text(encoding="utf-8"))
+                    local_state = json.loads(src.read_text(encoding="utf-8"))
+                    if not isinstance(remote_state, dict) or not isinstance(local_state, dict):
+                        raise ValueError("state must be an object")
+                    merged = dict(remote_state)
+                    for key, value in local_state.items():
+                        if key not in merged:
+                            merged[key] = value
+                        elif merged[key] != value:
+                            remote_done = merged[key] == "done" or (
+                                isinstance(merged[key], dict) and merged[key].get("status") == "done"
+                            )
+                            local_done = value == "done" or (
+                                isinstance(value, dict) and value.get("status") == "done"
+                            )
+                            if not (remote_done and local_done):
+                                raise ValueError(f"conflicting state for {key}")
+                    dst.write_text(json.dumps(merged, indent=2), encoding="utf-8")
+                except (OSError, ValueError, json.JSONDecodeError) as exc:
+                    raise RuntimeError(f"Cannot safely merge {relative}: {exc}") from exc
+                continue
+            if src.read_bytes() != dst.read_bytes():
+                raise RuntimeError(
+                    f"Additive merge collision at {relative}; existing remote file was preserved"
+                )
 
     # ------------------------------------------------------------------
     # Full workflow
@@ -195,7 +274,7 @@ class GitManager:
 
         # Push
         print(f"  Pushing to {self.branch}...")
-        success = self.push_with_auth(token)
+        success = self._push_with_reconciliation(token)
         if not success:
             raise RuntimeError("Push failed — see logs above for details (token redacted).")
 
@@ -217,12 +296,10 @@ class GitManager:
         """
         if not token:
             raise ValueError("GitHub token is required for pushing a stage.")
-        import shutil
-
         self.configure_identity()
-        # This branch is owned by the image generator; force-push is scoped to this branch. Reconcile
-        # remote commits before writing so a parallel generator never erases
-        # another generator's stage. Never use force push here.
+        # Reconcile remote commits before writing so a parallel generator never
+        # erases another generator's stage. The final push is also non-force and
+        # retries after rebasing if the remote advances during this operation.
         remote_ref = _run(["git", "ls-remote", "--heads", "origin", self.branch], self.repo_dir, check=False).stdout.strip()
         if remote_ref:
             _run(["git", "fetch", "origin", self.branch], self.repo_dir)
@@ -236,16 +313,22 @@ class GitManager:
         target.mkdir(parents=True, exist_ok=True)
 
         if stage_id != 0 and output.is_dir():
-            shutil.copytree(output, target, dirs_exist_ok=True)
+            self._copy_additive_tree(output, target)
         for file_name in files:
             source = Path(file_name)
             if not source.exists():
                 continue
             destination = target / source.name
             if source.is_dir():
-                shutil.copytree(source, destination, dirs_exist_ok=True)
+                self._copy_additive_tree(source, destination)
             else:
-                shutil.copy2(source, destination)
+                if destination.exists() and source.read_bytes() != destination.read_bytes():
+                    raise RuntimeError(
+                        f"Additive merge collision at {destination.relative_to(self.repo_dir)}; "
+                        "existing remote file was preserved"
+                    )
+                if not destination.exists():
+                    shutil.copy2(source, destination)
 
         _run(["git", "add", str(target.relative_to(self.repo_dir))], self.repo_dir)
         staged = subprocess.run(
@@ -256,10 +339,11 @@ class GitManager:
             return self.current_commit()
 
         commit_hash = self.commit(f"dataset(stage-{stage_id:02d}): sync generated images")
-        if not self.push_with_auth(token):
+        if not self._push_with_reconciliation(token):
             raise RuntimeError(
-                "Image branch push failed. The image branch is independent; "
-                "inspect the remote error and retry the image branch only."
+                "Image branch push could not be reconciled safely. No remote "
+                "data was overwritten; inspect the conflict and retry the "
+                "image branch only."
             )
         return commit_hash
 
