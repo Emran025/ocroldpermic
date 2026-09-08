@@ -1,0 +1,25 @@
+{
+  "character": "\ud800\udf53",
+  "codepoint": 66387,
+  "source_family": "03_Modern_Permic",
+  "source_style": "Bold",
+  "operation": "ink",
+  "rotation_deg": 2.64,
+  "occlusion_level": "none",
+  "occlusion_fraction": 0.0,
+  "resolution_scale": 1.0,
+  "seed": 1882516896,
+  "bbox_xyxy": [
+    170,
+    92,
+    396,
+    338
+  ],
+  "canvas_size": [
+    512,
+    512
+  ],
+  "chars": [
+    "\ud800\udf53"
+  ]
+}

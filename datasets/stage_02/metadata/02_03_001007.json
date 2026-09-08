@@ -1,0 +1,25 @@
+{
+  "character": "\ud800\udf52",
+  "codepoint": 66386,
+  "source_family": "01_Original_Handwriting",
+  "source_style": "Bold",
+  "operation": "ink",
+  "rotation_deg": 2.01,
+  "occlusion_level": "none",
+  "occlusion_fraction": 0.0,
+  "resolution_scale": 1.0,
+  "seed": 629006114,
+  "bbox_xyxy": [
+    119,
+    170,
+    335,
+    380
+  ],
+  "canvas_size": [
+    512,
+    512
+  ],
+  "chars": [
+    "\ud800\udf52"
+  ]
+}
