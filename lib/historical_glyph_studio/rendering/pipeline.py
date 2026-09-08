@@ -143,6 +143,18 @@ class RenderingPipeline:
         if config.degradation.blur_sigma > 0:
             mask = apply_mask_blur(mask, config.degradation.blur_sigma * 0.5)
 
+        # Partial, seeded edge ink bleed: sparse dilation on selected edge
+        # regions, preserving the main glyph while simulating ink spread.
+        edge_bleed = float(getattr(config, "edge_bleed", 0.0))
+        if edge_bleed > 0.0:
+            kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
+            dilated = cv2.dilate((mask * 255).astype(np.uint8), kernel, iterations=1).astype(np.float32) / 255.0
+            edge = np.clip(dilated - mask, 0.0, 1.0)
+            smooth_noise = cv2.GaussianBlur(rng.random(mask.shape).astype(np.float32), (0, 0), 1.2)
+            threshold = 0.62 - min(0.18, edge_bleed * 0.18)
+            selected = (smooth_noise > threshold).astype(np.float32)
+            mask = np.clip(mask + edge * selected * min(1.0, edge_bleed * 1.8), 0.0, 1.0).astype(np.float32)
+
         # ----------------------------------------------------------------
         # 4. Occlusion (discriminative-aware)
         # ----------------------------------------------------------------

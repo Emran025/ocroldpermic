@@ -164,6 +164,13 @@ STAGES.append(StageDef(
     concepts=concepts_12, default_samples=34200, canvas_size=(1024, 1024), seed_offset=120000
 ))
 
+# From Stage 03 onward, add sparse seeded edge bleed to simulate ink spread.
+# The effect is partial and low-strength; it does not replace the original glyph.
+for _stage in STAGES:
+    if _stage.stage_id >= 3:
+        for _concept in _stage.concepts:
+            _concept.edge_bleed = 0.55
+
 def get_stage(stage_id: int) -> StageDef:
     """Get a stage definition by its ID."""
     for stage in STAGES:
