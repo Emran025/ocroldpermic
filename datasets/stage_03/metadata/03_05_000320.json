@@ -1,0 +1,25 @@
+{
+  "character": "\ud800\udf60",
+  "codepoint": 66400,
+  "source_family": "03_Modern_Permic",
+  "source_style": "Bold",
+  "operation": "engraved",
+  "rotation_deg": 0.93,
+  "occlusion_level": "none",
+  "occlusion_fraction": 0.0,
+  "resolution_scale": 0.75,
+  "seed": 678514580,
+  "bbox_xyxy": [
+    100,
+    70,
+    273,
+    252
+  ],
+  "canvas_size": [
+    512,
+    512
+  ],
+  "chars": [
+    "\ud800\udf60"
+  ]
+}
