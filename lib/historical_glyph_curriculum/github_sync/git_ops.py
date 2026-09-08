@@ -11,6 +11,8 @@ import json
 import re
 import subprocess
 import shutil
+import tempfile
+from collections import Counter
 from pathlib import Path
 from typing import Optional
 
@@ -150,24 +152,62 @@ class GitManager:
         return True
 
     def _rebase_onto_remote(self) -> bool:
-        """Fetch the branch and rebase the local commit onto its newest tip.
+        """Reapply this writer's commit on top of the newest remote tip.
 
-        A failed rebase is aborted immediately.  In particular, we do not use
-        ``checkout --theirs`` or any other conflict strategy that could silently
-        discard another generator's files.
+        A normal rebase cannot resolve two writers changing ``manifest.json``
+        or ``generation_state.json``. Instead, capture the files introduced by
+        the local commit, reset to the remote tip, and copy those files back
+        through the same additive/semantic merge rules used by ``push_stage``.
+        No remote file is selected blindly and no local work is discarded.
         """
         _run(["git", "fetch", "origin", self.branch], self.repo_dir)
-        result = _run(
-            ["git", "rebase", f"origin/{self.branch}"],
+        changed = _run(
+            ["git", "diff-tree", "--no-commit-id", "--name-only", "-r", "HEAD"],
             self.repo_dir,
-            check=False,
-        )
-        if result.returncode == 0:
-            return True
-        _run(["git", "rebase", "--abort"], self.repo_dir, check=False)
-        err = _redact(result.stderr or result.stdout or "rebase conflict")
-        log.error("Cannot reconcile image-branch changes safely: %s", err)
-        return False
+        ).stdout.splitlines()
+        if not changed:
+            return False
+        with tempfile.TemporaryDirectory(prefix="dataset-reconcile-") as td:
+            staged_sources = []
+            for relative in sorted(
+                changed,
+                key=lambda item: Path(item).name in {"generation_state.json", "manifest.json"},
+            ):
+                source = Path(td) / relative
+                source.parent.mkdir(parents=True, exist_ok=True)
+                result = subprocess.run(
+                    ["git", "show", f"HEAD:{relative}"],
+                    cwd=str(self.repo_dir), capture_output=True,
+                )
+                if result.returncode != 0:
+                    continue  # additive generation never needs to reapply deletions
+                source.write_bytes(result.stdout)
+                staged_sources.append((relative, source))
+
+            _run(["git", "reset", "--hard", f"origin/{self.branch}"], self.repo_dir)
+            try:
+                for relative, source in staged_sources:
+                    destination = self.repo_dir / relative
+                    destination.parent.mkdir(parents=True, exist_ok=True)
+                    if source.name in {"generation_state.json", "manifest.json"} and destination.exists():
+                        self._merge_shared_json(source, destination, Path(relative))
+                    elif not destination.exists():
+                        shutil.copy2(source, destination)
+                    elif source.read_bytes() != destination.read_bytes():
+                        raise RuntimeError(
+                            f"Additive merge collision at {relative}; both versions were preserved locally"
+                        )
+                    self._run_git_add(relative)
+                self.commit("dataset: reconcile concurrent additive generation")
+            except Exception as exc:
+                _run(["git", "reset", "--hard", f"origin/{self.branch}"], self.repo_dir, check=False)
+                log.error("Cannot reconcile concurrent dataset commit safely: %s", _redact(str(exc)))
+                return False
+        return True
+
+    def _run_git_add(self, relative: str) -> None:
+        """Stage one path using the repository-local git helper."""
+        _run(["git", "add", "--", relative], self.repo_dir)
 
     def _push_with_reconciliation(self, token: str, attempts: int = 3) -> bool:
         """Push without overwriting remote commits, rebasing after a race."""
@@ -198,33 +238,85 @@ class GitManager:
             if not dst.exists():
                 shutil.copy2(src, dst)
                 continue
-            if src.name == "generation_state.json":
-                try:
-                    remote_state = json.loads(dst.read_text(encoding="utf-8"))
-                    local_state = json.loads(src.read_text(encoding="utf-8"))
-                    if not isinstance(remote_state, dict) or not isinstance(local_state, dict):
-                        raise ValueError("state must be an object")
-                    merged = dict(remote_state)
-                    for key, value in local_state.items():
-                        if key not in merged:
-                            merged[key] = value
-                        elif merged[key] != value:
-                            remote_done = merged[key] == "done" or (
-                                isinstance(merged[key], dict) and merged[key].get("status") == "done"
-                            )
-                            local_done = value == "done" or (
-                                isinstance(value, dict) and value.get("status") == "done"
-                            )
-                            if not (remote_done and local_done):
-                                raise ValueError(f"conflicting state for {key}")
-                    dst.write_text(json.dumps(merged, indent=2), encoding="utf-8")
-                except (OSError, ValueError, json.JSONDecodeError) as exc:
-                    raise RuntimeError(f"Cannot safely merge {relative}: {exc}") from exc
+            if src.name in {"generation_state.json", "manifest.json"}:
+                self._merge_shared_json(src, dst, relative)
                 continue
             if src.read_bytes() != dst.read_bytes():
                 raise RuntimeError(
                     f"Additive merge collision at {relative}; existing remote file was preserved"
                 )
+
+    @staticmethod
+    def _merge_unique_list(left: list, right: list) -> list:
+        """Union JSON list values while preserving first-seen order."""
+        result = []
+        seen = set()
+        for value in [*left, *right]:
+            marker = json.dumps(value, sort_keys=True, ensure_ascii=False)
+            if marker not in seen:
+                seen.add(marker)
+                result.append(value)
+        return result
+
+    def _merge_shared_json(self, source: Path, destination: Path, relative: Path) -> None:
+        """Merge the two shared stage files without dropping either writer.
+
+        ``generation_state.json`` is merged by concept key.  ``manifest.json``
+        is merged by unioning concepts/lists and deriving totals from the
+        actual files already present in the destination stage.  This avoids
+        double-counting when both accounts started from the same checkpoint.
+        """
+        try:
+            local = json.loads(source.read_text(encoding="utf-8"))
+            remote = json.loads(destination.read_text(encoding="utf-8"))
+            if not isinstance(local, dict) or not isinstance(remote, dict):
+                raise ValueError("both JSON values must be objects")
+            merged = dict(remote)
+            if source.name == "generation_state.json":
+                for key, value in local.items():
+                    if key not in merged:
+                        merged[key] = value
+                    elif merged[key] != value:
+                        # Both accounts may finish the same concept with
+                        # different timestamps. Preserve the completed record
+                        # deterministically and never mark it incomplete.
+                        remote_done = remote[key] == "done" or (
+                            isinstance(remote[key], dict) and remote[key].get("status") == "done"
+                        )
+                        local_done = value == "done" or (
+                            isinstance(value, dict) and value.get("status") == "done"
+                        )
+                        if local_done and not remote_done:
+                            merged[key] = value
+                        elif not remote_done and not local_done:
+                            raise ValueError(f"conflicting incomplete state for {key}")
+            else:
+                for key, value in local.items():
+                    if key in {"total_images", "class_distribution", "generation_time_seconds"}:
+                        continue
+                    if isinstance(value, list) and isinstance(merged.get(key), list):
+                        merged[key] = self._merge_unique_list(merged[key], value)
+                    elif key not in merged or merged[key] in (None, "", False):
+                        merged[key] = value
+                images = destination.parent / "images"
+                labels = destination.parent / "labels"
+                image_files = sorted(images.glob("*.png")) if images.is_dir() else []
+                merged["total_images"] = len(image_files)
+                if labels.is_dir():
+                    counts = Counter()
+                    for label in labels.glob("*.txt"):
+                        for line in label.read_text(encoding="utf-8").splitlines():
+                            fields = line.split()
+                            if fields and fields[0].isdigit():
+                                counts[fields[0]] += 1
+                    merged["class_distribution"] = dict(sorted(counts.items(), key=lambda item: int(item[0])))
+                merged["generation_time_seconds"] = max(
+                    float(remote.get("generation_time_seconds", 0) or 0),
+                    float(local.get("generation_time_seconds", 0) or 0),
+                )
+            destination.write_text(json.dumps(merged, indent=2, ensure_ascii=False), encoding="utf-8")
+        except (OSError, ValueError, TypeError, json.JSONDecodeError) as exc:
+            raise RuntimeError(f"Cannot safely merge shared file {relative}: {exc}") from exc
 
     # ------------------------------------------------------------------
     # Full workflow
@@ -321,6 +413,8 @@ class GitManager:
             destination = target / source.name
             if source.is_dir():
                 self._copy_additive_tree(source, destination)
+            elif source.name in {"generation_state.json", "manifest.json"} and destination.exists():
+                self._merge_shared_json(source, destination, destination.relative_to(self.repo_dir))
             else:
                 if destination.exists() and source.read_bytes() != destination.read_bytes():
                     raise RuntimeError(
