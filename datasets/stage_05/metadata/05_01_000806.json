@@ -1,0 +1,25 @@
+{
+  "character": "\ud800\udf61",
+  "codepoint": 66401,
+  "source_family": "02_Original_Anbur",
+  "source_style": "Original",
+  "operation": "engraved",
+  "rotation_deg": 1.3,
+  "occlusion_level": "none",
+  "occlusion_fraction": 0.0,
+  "resolution_scale": 1.0,
+  "seed": 1884551474,
+  "bbox_xyxy": [
+    105,
+    138,
+    329,
+    358
+  ],
+  "canvas_size": [
+    512,
+    512
+  ],
+  "chars": [
+    "\ud800\udf61"
+  ]
+}
