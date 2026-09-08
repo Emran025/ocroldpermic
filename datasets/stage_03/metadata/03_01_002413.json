@@ -1,0 +1,25 @@
+{
+  "character": "\ud800\udf65",
+  "codepoint": 66405,
+  "source_family": "03_Modern_Permic",
+  "source_style": "Original",
+  "operation": "glass",
+  "rotation_deg": 0.03,
+  "occlusion_level": "none",
+  "occlusion_fraction": 0.0,
+  "resolution_scale": 0.75,
+  "seed": 765533253,
+  "bbox_xyxy": [
+    84,
+    105,
+    258,
+    281
+  ],
+  "canvas_size": [
+    512,
+    512
+  ],
+  "chars": [
+    "\ud800\udf65"
+  ]
+}
