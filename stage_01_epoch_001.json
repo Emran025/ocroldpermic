@@ -6,7 +6,7 @@
   "map50_95": 0.0,
   "precision": 0.0,
   "recall": 0.0,
-  "train_loss": 4.783003807067871,
+  "train_loss": 5.107104301452637,
   "val_loss": 0.0,
   "class_metrics": {},
   "training_config": {
@@ -14,10 +14,10 @@
     "image_size": 640
   },
   "dataset_stage": 1,
-  "dataset_version": "2026-09-08T00:31:02.305856+00:00",
-  "model_source_commit": "60aabf92c2ae2e146e012f362b2a715ce0a65550",
+  "dataset_version": "2026-09-08T23:37:17.004542+00:00",
+  "model_source_commit": "e3ee06f1d3d5aa1bcbb8541a3f0b38b71b489f6d",
   "checkpoint_commit": "",
-  "timestamp": "2026-09-08T00:43:38.375678+00:00",
+  "timestamp": "2026-09-08T23:50:24.036341+00:00",
   "random_seed": 42,
   "runtime": {},
   "is_best": false,
