@@ -22,7 +22,7 @@ class ConceptTemplate:
     fading_alpha: float
     jpeg_quality: Optional[int]
     glyphs_per_image: Union[int, Tuple[int, int]]
-    glyph_scale: float
+    glyph_scale: Union[float, Tuple[float, float]]
     canvas_size: Tuple[int, int]
     mixed_families: bool
     samples_fraction: float

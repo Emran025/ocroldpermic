@@ -84,13 +84,21 @@ def render_one_sample(args: dict) -> Optional[dict]:
         rot_max = float(args.get("rotation_max", 1.0))
         rotation: tuple | bool = (rot_min, rot_max) if rot_min != rot_max else False
 
+        glyph_scale = args.get("glyph_scale", 0.55)
+        if isinstance(glyph_scale, (list, tuple)):
+            if len(glyph_scale) != 2:
+                raise ValueError("glyph_scale range must contain exactly (min, max)")
+            rng = np.random.default_rng(seed)
+            glyph_scale = float(rng.uniform(float(glyph_scale[0]), float(glyph_scale[1])))
+        else:
+            glyph_scale = float(glyph_scale)
         render_kwargs = dict(
             background=args.get("background", "stone"),
             operation=args.get("operation", "faded_black"),
             rotation=rotation,
             occlusion=args.get("occlusion") or False,
             perspective=bool(args.get("perspective", False)),
-            glyph_scale=float(args.get("glyph_scale", 0.55)),
+            glyph_scale=glyph_scale,
             canvas_size=canvas_size,
             seed=seed,
             family=args.get("family") or None,

@@ -63,7 +63,11 @@ colors_2 = [
     (185, 140, 45), (35, 55, 95), (40, 40, 40), (40, 40, 40)
 ]
 concepts_2 = [
-    make_concept(i+1, f'concept_{i+1}', material=materials_2[i], glyph_color=colors_2[i], background=bg_2[i], rotation_deg=(-3.0, 3.0))
+    make_concept(
+        i+1, f'concept_{i+1}', material=materials_2[i], glyph_color=colors_2[i],
+        background=bg_2[i], rotation_deg=(-3.0, 3.0),
+        glyph_scale=(0.35, 0.80) if i >= 6 else 0.55,
+    )
     for i in range(12)
 ]
 STAGES.append(StageDef(
@@ -77,7 +81,7 @@ blur_vals = [0.8, 1.5, 0.8, 1.5, 0.8, 1.5, 0.8, 1.5, 1.0, 1.2, 1.0, 1.2]
 ero_vals = [1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2]
 res_vals = [0.75, 0.5, 0.75, 0.5, 0.75, 0.5, 0.75, 0.5, 0.6, 0.6, 0.6, 0.6]
 fade_vals = [0.15, 0.30, 0.15, 0.30, 0.15, 0.30, 0.15, 0.30, 0.2, 0.2, 0.2, 0.2]
-concepts_3 = [make_concept(i+1, f'concept_{i+1}', blur_sigma=blur_vals[i], erosion_iters=ero_vals[i], resolution_scale=res_vals[i], fading_alpha=fade_vals[i], jpeg_quality=50) for i in range(12)]
+concepts_3 = [make_concept(i+1, f'concept_{i+1}', blur_sigma=blur_vals[i], erosion_iters=ero_vals[i], resolution_scale=res_vals[i], fading_alpha=fade_vals[i], jpeg_quality=50, glyph_scale=(0.35, 0.80) if i >= 6 else 0.55) for i in range(12)]
 STAGES.append(StageDef(
     stage_id=3, name='Controlled Degradation', description='',
     difficulty=DifficultyConfig(visibility=0.78, degradation=0.35, occlusion=0.0, geometric_variation=0.1, scene_complexity=0.05, resolution_quality=0.85, mixed_families=0.0, name='stage_03'),
