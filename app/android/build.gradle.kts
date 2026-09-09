@@ -31,6 +31,14 @@ subprojects {
             compileSdk = 35
         }
     }
+
+    afterEvaluate {
+        if (name == "onnxruntime") {
+            extensions.configure<LibraryExtension> {
+                compileSdk = 35
+            }
+        }
+    }
 }
 
 tasks.register<Delete>("clean") {
