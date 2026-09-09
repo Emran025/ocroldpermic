@@ -6,8 +6,8 @@ plugins {
 
 android {
     namespace = "com.example.ocroldpermic"
-    // file_picker and flutter_plugin_android_lifecycle now require API 36.
-    compileSdk = 36
+    // Matches shafeea-build-env Flutter 3.44.5 image (Android API 35).
+    compileSdk = 35
     ndkVersion = flutter.ndkVersion
 
     compileOptions {

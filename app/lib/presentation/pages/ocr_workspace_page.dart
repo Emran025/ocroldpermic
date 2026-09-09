@@ -50,15 +50,18 @@ class _OcrWorkspacePageState extends State<OcrWorkspacePage> {
   }
 
   Future<void> _choosePackage() async {
-    final file = await FilePicker.platform.pickFiles(
-        type: FileType.custom, allowedExtensions: const ['ocrpkg', 'zip']);
-    final path = file?.files.single.path;
+    final files = await FilePicker.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: const ['ocrpkg', 'zip'],
+      allowMultiple: false,
+    );
+    final path = files?.single.path;
     if (path != null) await widget.workspace.importPackage(path);
   }
 
   Future<void> _chooseImageFile() async {
-    final file = await FilePicker.platform.pickFiles(type: FileType.image);
-    final path = file?.files.single.path;
+    final file = await FilePicker.pickFile(type: FileType.image);
+    final path = file?.path;
     if (path != null) widget.workspace.setImage(path);
   }
 

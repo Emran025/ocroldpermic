@@ -70,16 +70,15 @@ jobs:
       - name: Build release APK
         working-directory: app
         run: |
-          flutter pub get
-          flutter build apk --release --build-name "${{ steps.version.outputs.name }}" --build-number "${{ steps.version.outputs.number }}"
+          build-apk.sh teach "${{ steps.version.outputs.name }}" "${{ steps.version.outputs.number }}"
 
       - name: Prepare APK assets
         shell: bash
         run: |
           set -euo pipefail
           mkdir -p dist
-          cp app/build/app/outputs/flutter-apk/app-release.apk "dist/ocroldpermic-${{ steps.version.outputs.tag }}.apk"
-          cp app/build/app/outputs/flutter-apk/app-release.apk dist/ocroldpermic.apk
+          cp app/build/app/outputs/flutter-apk/shafeea-teach-v${{ steps.version.outputs.name }}.apk "dist/ocroldpermic-${{ steps.version.outputs.tag }}.apk"
+          cp app/build/app/outputs/flutter-apk/shafeea-teach.apk dist/ocroldpermic.apk
 
       - name: Upload APK artifacts
         uses: actions/upload-artifact@v4
