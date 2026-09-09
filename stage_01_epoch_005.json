@@ -2,11 +2,11 @@
   "stage": 1,
   "epoch": 5,
   "global_step": 5,
-  "map50": 0.99397,
-  "map50_95": 0.99311,
-  "precision": 0.99527,
-  "recall": 0.99381,
-  "train_loss": 3.106544017791748,
+  "map50": 0.9934,
+  "map50_95": 0.99097,
+  "precision": 0.99356,
+  "recall": 0.99399,
+  "train_loss": 3.3835394382476807,
   "val_loss": 0.0,
   "class_metrics": {},
   "training_config": {
@@ -14,12 +14,12 @@
     "image_size": 640
   },
   "dataset_stage": 1,
-  "dataset_version": "2026-09-08T00:31:02.305856+00:00",
-  "model_source_commit": "452c47b1c02636a5a64de8ea02939bf5092d4778",
+  "dataset_version": "2026-09-08T23:37:17.004542+00:00",
+  "model_source_commit": "0aeeef1f935ecd76e75448498836200a510f5dde",
   "checkpoint_commit": "",
-  "timestamp": "2026-09-08T01:24:23.053695+00:00",
+  "timestamp": "2026-09-09T00:31:43.629105+00:00",
   "random_seed": 42,
   "runtime": {},
-  "is_best": true,
+  "is_best": false,
   "remediation_round": 0
 }
