@@ -69,7 +69,9 @@ jobs:
 
       - name: Build release APK
         working-directory: app
-        run: flutter build apk --release --build-name "${{ steps.version.outputs.name }}" --build-number "${{ steps.version.outputs.number }}"
+        run: |
+          flutter pub get
+          flutter build apk --release --build-name "${{ steps.version.outputs.name }}" --build-number "${{ steps.version.outputs.number }}"
 
       - name: Prepare APK assets
         shell: bash
