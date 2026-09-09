@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 
+import '../../application/bundled_model_installer.dart';
 import '../../application/model_update.dart';
 import '../../domain/entities/ocr_result.dart';
 import '../../domain/entities/release_manifest.dart';
@@ -30,6 +31,7 @@ class OcrWorkspaceController extends ChangeNotifier {
     required this.remoteImages,
     required this.exporter,
     required this.updates,
+    this.bundledModelInstaller,
   });
 
   final ModelRepository models;
@@ -38,14 +40,14 @@ class OcrWorkspaceController extends ChangeNotifier {
   final RemoteImageLoader remoteImages;
   final OcrResultExporter exporter;
   final ModelUpdateController updates;
+  final BundledModelInstaller? bundledModelInstaller;
 
   OcrWorkspaceStatus _status = OcrWorkspaceStatus.idle;
   OcrWorkspaceStatus get status => _status;
   WorkspaceMessage? _message;
   WorkspaceMessage? get message => _message;
   List<InstalledModel> _installedModels = const [];
-  List<InstalledModel> get installedModels =>
-      List.unmodifiable(_installedModels);
+  List<InstalledModel> get installedModels => List.unmodifiable(_installedModels);
   InstalledModel? _activeModel;
   InstalledModel? get activeModel => _activeModel;
   String? _imagePath;
@@ -62,6 +64,7 @@ class OcrWorkspaceController extends ChangeNotifier {
     _message = null;
     notifyListeners();
     try {
+      await bundledModelInstaller?.installIfPresent(models);
       await _reloadModels();
       _status = _activeModel == null
           ? OcrWorkspaceStatus.idle
@@ -91,15 +94,12 @@ class OcrWorkspaceController extends ChangeNotifier {
     _transferProgress = null;
     notifyListeners();
     try {
-      _imagePath =
-          await remoteImages.download(uri, onProgress: (received, total) {
+      _imagePath = await remoteImages.download(uri, onProgress: (received, total) {
         _transferProgress = total <= 0 ? null : received / total;
         notifyListeners();
       });
       _result = null;
-      _status = _activeModel == null
-          ? OcrWorkspaceStatus.idle
-          : OcrWorkspaceStatus.ready;
+      _status = _activeModel == null ? OcrWorkspaceStatus.idle : OcrWorkspaceStatus.ready;
       _message = null;
     } catch (_) {
       _fail(WorkspaceMessages.imageDownloadFailed);
@@ -124,8 +124,7 @@ class OcrWorkspaceController extends ChangeNotifier {
       notifyListeners();
       await models.installFromManifest(
         manifest,
-        source:
-            ModelSource(kind: ModelSourceKind.remoteManifest, location: uri),
+        source: ModelSource(kind: ModelSourceKind.remoteManifest, location: uri),
         onProgress: _onTransfer,
       );
       await _reloadModels();
@@ -148,12 +147,10 @@ class OcrWorkspaceController extends ChangeNotifier {
     _transferProgress = null;
     notifyListeners();
     try {
-      final installed =
-          await models.installFromPackageUrl(uri, onProgress: _onTransfer);
+      final installed = await models.installFromPackageUrl(uri, onProgress: _onTransfer);
       await _reloadModels();
       _activeModel = _installedModels
-          .where(
-              (model) => model.manifest.identity == installed.manifest.identity)
+          .where((model) => model.manifest.identity == installed.manifest.identity)
           .firstOrNull;
       _status = OcrWorkspaceStatus.ready;
       _message = WorkspaceMessages.ready(installed.manifest.displayName);
@@ -173,12 +170,10 @@ class OcrWorkspaceController extends ChangeNotifier {
     _transferProgress = null;
     notifyListeners();
     try {
-      final installed =
-          await models.importPackage(path, onProgress: _onTransfer);
+      final installed = await models.importPackage(path, onProgress: _onTransfer);
       await _reloadModels();
       _activeModel = _installedModels
-          .where(
-              (model) => model.manifest.identity == installed.manifest.identity)
+          .where((model) => model.manifest.identity == installed.manifest.identity)
           .firstOrNull;
       _status = OcrWorkspaceStatus.ready;
       _message = WorkspaceMessages.ready(installed.manifest.displayName);
@@ -207,20 +202,16 @@ class OcrWorkspaceController extends ChangeNotifier {
     try {
       await models.remove(model.manifest.packageId, model.manifest.version);
       await _reloadModels();
-      _status = _activeModel == null
-          ? OcrWorkspaceStatus.idle
-          : OcrWorkspaceStatus.ready;
+      _status = _activeModel == null ? OcrWorkspaceStatus.idle : OcrWorkspaceStatus.ready;
     } catch (_) {
       _fail(WorkspaceMessages.removeActiveFailed);
     }
     notifyListeners();
   }
 
-  void updateConfiguration(
-      {double? confidenceThreshold, double? iouThreshold, int? maxDetections}) {
+  void updateConfiguration({double? confidenceThreshold, double? iouThreshold, int? maxDetections}) {
     _configuration = OcrRunConfiguration(
-      confidenceThreshold:
-          confidenceThreshold ?? _configuration.confidenceThreshold,
+      confidenceThreshold: confidenceThreshold ?? _configuration.confidenceThreshold,
       iouThreshold: iouThreshold ?? _configuration.iouThreshold,
       maxDetections: maxDetections ?? _configuration.maxDetections,
     );
@@ -243,12 +234,9 @@ class OcrWorkspaceController extends ChangeNotifier {
     _result = null;
     notifyListeners();
     try {
-      _result = await runOcr(
-          imagePath: image, model: model, configuration: _configuration);
+      _result = await runOcr(imagePath: image, model: model, configuration: _configuration);
       _status = OcrWorkspaceStatus.completed;
-      _message = _result!.orderedText.detections.isEmpty
-          ? WorkspaceMessages.noGlyphs
-          : null;
+      _message = _result!.orderedText.detections.isEmpty ? WorkspaceMessages.noGlyphs : null;
     } catch (_) {
       _fail(WorkspaceMessages.ocrFailed);
     }
@@ -258,8 +246,7 @@ class OcrWorkspaceController extends ChangeNotifier {
   void editText(String value) {
     final current = _result;
     if (current == null) return;
-    _result = current.copyWith(
-        editedText: value, clearEditedText: value == current.rawText);
+    _result = current.copyWith(editedText: value, clearEditedText: value == current.rawText);
     notifyListeners();
   }
 
@@ -283,16 +270,12 @@ class OcrWorkspaceController extends ChangeNotifier {
     _message = WorkspaceMessages.checkingUpdates;
     notifyListeners();
     final update = await updates.check(manual: true);
-    _status = _activeModel == null
-        ? OcrWorkspaceStatus.idle
-        : OcrWorkspaceStatus.ready;
+    _status = _activeModel == null ? OcrWorkspaceStatus.idle : OcrWorkspaceStatus.ready;
     _message = switch (update) {
       UpdateOffline() => WorkspaceMessages.offline,
       UpdateUpToDate() => WorkspaceMessages.upToDate,
-      UpdateAvailable(:final manifest) =>
-        WorkspaceMessages.updateAvailable(manifest.version),
-      UpdateActivated(:final model) =>
-        WorkspaceMessages.updated(model.manifest.displayName),
+      UpdateAvailable(:final manifest) => WorkspaceMessages.updateAvailable(manifest.version),
+      UpdateActivated(:final model) => WorkspaceMessages.updated(model.manifest.displayName),
       UpdateInstalling() => WorkspaceMessages.installingUpdate,
       UpdateChecking() => WorkspaceMessages.checkingUpdates,
       UpdateFailed(:final message) => WorkspaceMessages.raw(message),
@@ -302,8 +285,7 @@ class OcrWorkspaceController extends ChangeNotifier {
 
   Future<void> _reloadModels() async {
     _installedModels = await models.listInstalled();
-    _activeModel =
-        _installedModels.where((model) => model.isActive).firstOrNull;
+    _activeModel = _installedModels.where((model) => model.isActive).firstOrNull;
   }
 
   void _onTransfer(ModelTransferProgress progress) {

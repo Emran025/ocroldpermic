@@ -10,6 +10,7 @@ import '../infrastructure/network/remote_image_loader.dart';
 import '../infrastructure/storage/atomic_model_store.dart';
 import '../infrastructure/storage/ocr_result_exporter.dart';
 import '../presentation/state/ocr_workspace_controller.dart';
+import 'bundled_model_installer.dart';
 import 'model_update.dart';
 
 class AppDependencies {
@@ -37,6 +38,7 @@ class AppDependencies {
       remoteImages: RemoteImageLoader(dio),
       exporter: OcrResultExporter(),
       updates: updates,
+      bundledModelInstaller: const BundledModelInstaller(),
     ));
   }
 }

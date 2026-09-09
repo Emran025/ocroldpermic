@@ -1,0 +1,97 @@
+name: Build & Release — Offline OCR App
+
+on:
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'
+      - 'v[0-9]+.[0-9]+.[0-9]+\+[0-9]+'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version name for a manual build, for example 0.1.0'
+        required: false
+        default: '0.1.0'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build offline APK
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/emran025/flutter-android-builder:3.44.5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Resolve model package
+        shell: bash
+        env:
+          MODEL_PACKAGE_URL: ${{ vars.MODEL_PACKAGE_URL }}
+        run: |
+          set -euo pipefail
+          mkdir -p app/assets/models
+          if [[ -s app/assets/models/default.ocrpkg ]]; then
+            echo 'Using model package committed to the repository.'
+          elif [[ -n "${MODEL_PACKAGE_URL:-}" ]]; then
+            echo 'Downloading model package from the public repository variable.'
+            curl --fail --location --retry 3 --output app/assets/models/default.ocrpkg "$MODEL_PACKAGE_URL"
+          else
+            echo 'ERROR: no OCR weights found.' >&2
+            echo 'Commit app/assets/models/default.ocrpkg or set the public MODEL_PACKAGE_URL variable.' >&2
+            exit 1
+          fi
+          test -s app/assets/models/default.ocrpkg
+          unzip -t app/assets/models/default.ocrpkg >/dev/null
+
+      - name: Extract version
+        id: version
+        shell: bash
+        run: |
+          set -euo pipefail
+          tag="${GITHUB_REF_NAME}"
+          if [[ "$GITHUB_EVENT_NAME" == 'workflow_dispatch' ]]; then
+            tag="v${{ inputs.version }}"
+          fi
+          version="${tag#v}"
+          if [[ "$version" == *'+'* ]]; then
+            name="${version%%+*}"
+            number="${version##*+}"
+          else
+            name="$version"
+            number="${GITHUB_RUN_NUMBER}"
+          fi
+          echo "name=$name" >> "$GITHUB_OUTPUT"
+          echo "number=$number" >> "$GITHUB_OUTPUT"
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+
+      - name: Build release APK
+        working-directory: app
+        run: flutter build apk --release --build-name "${{ steps.version.outputs.name }}" --build-number "${{ steps.version.outputs.number }}"
+
+      - name: Prepare APK assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p dist
+          cp app/build/app/outputs/flutter-apk/app-release.apk "dist/ocroldpermic-${{ steps.version.outputs.tag }}.apk"
+          cp app/build/app/outputs/flutter-apk/app-release.apk dist/ocroldpermic.apk
+
+      - name: Upload APK artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ocroldpermic-apk
+          path: dist/*.apk
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.version.outputs.tag }}
+          name: "Offline OCR App ${{ steps.version.outputs.name }}"
+          generate_release_notes: true
+          files: dist/*.apk
+          fail_on_unmatched_files: true
+          make_latest: true
