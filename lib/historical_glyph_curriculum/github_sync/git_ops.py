@@ -8,10 +8,12 @@ from __future__ import annotations
 
 import logging
 import json
+import random
 import re
 import subprocess
 import shutil
 import tempfile
+import time
 from collections import Counter
 from pathlib import Path
 from typing import Optional
@@ -209,14 +211,35 @@ class GitManager:
         """Stage one path using the repository-local git helper."""
         _run(["git", "add", "--", relative], self.repo_dir)
 
-    def _push_with_reconciliation(self, token: str, attempts: int = 3) -> bool:
-        """Push without overwriting remote commits, rebasing after a race."""
+    def _push_with_reconciliation(self, token: str, attempts: int = 6) -> bool:
+        """Push without overwriting remote commits, reconciling remote races.
+
+        GitHub may reject a perfectly valid non-force push when another Colab
+        worker advances the branch between the client-side negotiation and the
+        receive-pack lock.  A short jittered backoff is important here: without
+        it, concurrent workers tend to collide again immediately and exhaust a
+        small retry budget.  Every retry still goes through the additive merge
+        path; this method never force-pushes and never discards a remote commit.
+        """
         for attempt in range(1, attempts + 1):
             if self.push_with_auth(token):
                 return True
             if attempt == attempts:
                 break
-            if not self._rebase_onto_remote():
+            # Let the worker that currently owns the remote ref finish its
+            # receive-pack transaction before fetching and rebuilding locally.
+            # Keep the delay bounded so a transient race does not stall Colab.
+            delay = min(8.0, 0.5 * (2 ** (attempt - 1))) + random.uniform(0.0, 0.35)
+            time.sleep(delay)
+            try:
+                reconciled = self._rebase_onto_remote()
+            except (OSError, RuntimeError) as exc:
+                log.warning(
+                    "Remote reconciliation attempt %d/%d failed: %s",
+                    attempt, attempts - 1, _redact(str(exc)),
+                )
+                continue
+            if not reconciled:
                 return False
         return False
 
