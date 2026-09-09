@@ -141,11 +141,11 @@ package.ocrpkg (ZIP)
 
 يبحث التطبيق عند أول تشغيل عن الحزمة `app/assets/models/default.ocrpkg`. إذا كانت موجودة، تُنسخ إلى مخزن التطبيق وتُثبت وتُفحص بصمتها تلقائيًا قبل تفعيلها. بعد ذلك يعمل الاستدلال محليًا بالكامل دون إنترنت أو مفاتيح API أو بيانات سرية؛ الاتصال مطلوب فقط لاستيراد حزمة أو صورة بعيدة أو فحص تحديثات.
 
-لا يحتوي المستودع حاليًا على أوزان OCR ثنائية، ولذلك يمنع سير البناء إصدار APK ناقصًا. قبل إنشاء إصدار GitHub، إما أن ترفق الحزمة النهائية بهذا المسار، أو ترفعها إلى رابط HTTPS عام وتضيف متغير Repository Variable باسم `MODEL_PACKAGE_URL` (وليس Secret). سيتحقق سير البناء من أن الملف ZIP صالح قبل وضعه داخل APK. يجب أن تحتوي الحزمة على `manifest.json` وملف النموذج وخريطة الأبجدية وفق [عقد حزمة OCR](app/docs/OCR_PACKAGE_CONTRACT.md).
+الحزمة الافتراضية الحالية مأخوذة من آخر نتيجة منشورة في فرع `colab-results`، وهي `artifacts/published/stage-03/model.ocrpkg`. كما أن سير البناء يعيد في كل تشغيل اكتشاف أعلى `stage-*` موجود في هذا الفرع وينسخه إلى APK، لذلك لا يلزم رفع الأوزان يدويًا أو إضافة رابط أو Secret. إذا لم توجد أي حزمة منشورة، يفشل البناء بوضوح بدل إصدار APK ناقص. يجب أن تحتوي الحزمة على `manifest.json` وملف النموذج وخريطة الأبجدية وفق [عقد حزمة OCR](app/docs/OCR_PACKAGE_CONTRACT.md).
 
 ## 🤖 البناء التلقائي
 
-يعمل `.github/workflows/build-release.yml` عند دفع tag مثل `v0.1.0` أو يدويًا من تبويب Actions. لا يحتاج إلى `KEYSTORE_FILE` أو كلمات مرور أو عنوان API. ينتج `ocroldpermic-vX.Y.Z.apk` و`ocroldpermic.apk` داخل GitHub Release. يستخدم APK مفتاح debug الخاص ببيئة البناء للتثبيت المباشر؛ نشر Google Play يحتاج لاحقًا إلى توقيع release مستقل.
+يعمل `.github/workflows/build-release.yml` عند دفع tag مثل `v0.1.0` أو يدويًا من تبويب Actions. يبدأ أولًا بجلب فرع `colab-results` واختيار آخر stage منشور، ثم يضع `model.ocrpkg` في أصول Flutter قبل البناء. لا يحتاج إلى `KEYSTORE_FILE` أو كلمات مرور أو عنوان API. ينتج `ocroldpermic-vX.Y.Z.apk` و`ocroldpermic.apk` داخل GitHub Release. يستخدم APK مفتاح debug الخاص ببيئة البناء للتثبيت المباشر؛ نشر Google Play يحتاج لاحقًا إلى توقيع release مستقل.
 
 ## 📄 الترخيص
 

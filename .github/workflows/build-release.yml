@@ -27,21 +27,21 @@ jobs:
 
       - name: Resolve model package
         shell: bash
-        env:
-          MODEL_PACKAGE_URL: ${{ vars.MODEL_PACKAGE_URL }}
         run: |
           set -euo pipefail
           mkdir -p app/assets/models
-          if [[ -s app/assets/models/default.ocrpkg ]]; then
-            echo 'Using model package committed to the repository.'
-          elif [[ -n "${MODEL_PACKAGE_URL:-}" ]]; then
-            echo 'Downloading model package from the public repository variable.'
-            curl --fail --location --retry 3 --output app/assets/models/default.ocrpkg "$MODEL_PACKAGE_URL"
-          else
-            echo 'ERROR: no OCR weights found.' >&2
-            echo 'Commit app/assets/models/default.ocrpkg or set the public MODEL_PACKAGE_URL variable.' >&2
+          git fetch --no-tags --depth=1 origin colab-results
+          latest_path="$(git ls-tree -r --name-only origin/colab-results \
+            | grep -E '^artifacts/published/stage-[0-9]+/model\.ocrpkg$' \
+            | sort -V | tail -n 1)"
+          if [[ -z "$latest_path" ]]; then
+            echo 'ERROR: colab-results has no published model package.' >&2
             exit 1
           fi
+          latest_stage="${latest_path#artifacts/published/}"
+          latest_stage="${latest_stage%/model.ocrpkg}"
+          echo "Using $latest_stage from colab-results."
+          git show "origin/colab-results:${latest_path}" > app/assets/models/default.ocrpkg
           test -s app/assets/models/default.ocrpkg
           unzip -t app/assets/models/default.ocrpkg >/dev/null
 
