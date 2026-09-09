@@ -6,8 +6,8 @@ plugins {
 
 android {
     namespace = "com.example.ocroldpermic"
-    // Matches shafeea-build-env Flutter 3.44.5 image (Android API 35).
-    compileSdk = 35
+    // Matches the highest Android API required by the current Flutter plugins.
+    compileSdk = 36
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
