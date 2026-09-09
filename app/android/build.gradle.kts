@@ -1,3 +1,5 @@
+import com.android.build.api.dsl.LibraryExtension
+
 allprojects {
     repositories {
         google()
@@ -17,6 +19,18 @@ subprojects {
 }
 subprojects {
     project.evaluationDependsOn(":app")
+}
+
+// onnxruntime 1.4.1 still defaults its Android library to API 33, while its
+// transitive AndroidX dependencies require compilation against API 34 or newer.
+// Apply the project-wide override after the Android library plugin is present so
+// the dependency remains pinned while its compileSdk follows the application.
+subprojects {
+    plugins.withId("com.android.library") {
+        extensions.configure<LibraryExtension> {
+            compileSdk = 35
+        }
+    }
 }
 
 tasks.register<Delete>("clean") {
