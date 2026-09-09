@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "release_id": "stage-01",
-  "release_path": "artifacts/published/stage-01/release.json",
-  "release_sha256": "c2d8d2f268e72514245a49eb13b6d8e708bce3d6275546ff12f902aa9066c247"
+  "release_id": "stage-03",
+  "release_path": "artifacts/published/stage-03/release.json",
+  "release_sha256": "ff8fd6514b9970608bd8429eec457af43594ced70cfdb1e3003e7b2033f37e5c"
 }

@@ -1,0 +1,77 @@
+{
+  "schema_version": 1,
+  "release_id": "stage-03",
+  "publication_status": "published",
+  "created_at_utc": "2026-09-09T05:31:54.045748+00:00",
+  "source_commit": "d55b9729db6dc1a730ab3de2ff86982d8876ee05",
+  "model_scope": "synthetic-old-permic-character-detection",
+  "class_names": [
+    "U+10350",
+    "U+10351",
+    "U+10352",
+    "U+10353",
+    "U+10354",
+    "U+10355",
+    "U+10356",
+    "U+10357",
+    "U+10358",
+    "U+10359",
+    "U+1035A",
+    "U+1035B",
+    "U+1035C",
+    "U+1035D",
+    "U+1035E",
+    "U+1035F",
+    "U+10360",
+    "U+10361",
+    "U+10362",
+    "U+10363",
+    "U+10364",
+    "U+10365",
+    "U+10366",
+    "U+10367",
+    "U+10368",
+    "U+10369",
+    "U+1036A",
+    "U+1036B",
+    "U+1036C",
+    "U+1036D",
+    "U+1036E",
+    "U+1036F",
+    "U+10370",
+    "U+10371",
+    "U+10372",
+    "U+10373",
+    "U+10374",
+    "U+10375"
+  ],
+  "class_count": 38,
+  "metrics": {
+    "map50": 0.9949,
+    "map50_95": 0.9945,
+    "precision": 0.9925,
+    "recall": 0.9953
+  },
+  "assets": [
+    {
+      "path": "model.ocrpkg",
+      "sha256": "84052056034ff1d32033fa09c8bf14f26ea4a4a5799474feeae7e7d86b38dbbd",
+      "bytes": 10541104
+    },
+    {
+      "path": "weights/best.pt",
+      "sha256": "683a138b8ecd0038e7c42092c12602023994cacb6c1135d3fd8559f88544e584",
+      "bytes": 6260138
+    },
+    {
+      "path": "weights/best.onnx",
+      "sha256": "752c6a929afb594f22dae95a7dd524bb1aac8b1eac66ee23c1a11ea47de3a664",
+      "bytes": 12295149
+    }
+  ],
+  "web_weight": {
+    "path": "weights/best.pt",
+    "sha256": "683a138b8ecd0038e7c42092c12602023994cacb6c1135d3fd8559f88544e584",
+    "bytes": 6260138
+  }
+}
