@@ -3,5 +3,10 @@
     "status": "done",
     "sample_count": 2850,
     "completed_at": "2026-09-09T01:36:09.543775+00:00"
+  },
+  "concept_02": {
+    "status": "done",
+    "sample_count": 2850,
+    "completed_at": "2026-09-09T03:35:29.801163+00:00"
   }
 }
