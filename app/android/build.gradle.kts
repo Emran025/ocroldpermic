@@ -31,13 +31,11 @@ subprojects {
             compileSdk = 35
         }
     }
+}
 
-    afterEvaluate {
-        if (name == "onnxruntime") {
-            extensions.configure<LibraryExtension> {
-                compileSdk = 35
-            }
-        }
+gradle.projectsEvaluated {
+    project(":onnxruntime").extensions.configure<LibraryExtension> {
+        compileSdk = 35
     }
 }
 
