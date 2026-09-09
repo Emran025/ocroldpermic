@@ -2,8 +2,8 @@
   "schema_version": 1,
   "release_id": "stage-01",
   "publication_status": "published",
-  "created_at_utc": "2026-09-08T01:58:13.883003+00:00",
-  "source_commit": "9d065a7e5184725d1c5efeeee684448d69789e21",
+  "created_at_utc": "2026-09-09T00:56:42.539842+00:00",
+  "source_commit": "f1e9e7f0b0e9ef6bd1b34005e3437375585951dd",
   "model_scope": "synthetic-old-permic-character-detection",
   "class_names": [
     "U+10350",
@@ -48,30 +48,30 @@
   "class_count": 38,
   "metrics": {
     "map50": 0.9942,
-    "map50_95": 0.994,
-    "precision": 0.996,
-    "recall": 0.9972
+    "map50_95": 0.9941,
+    "precision": 0.9955,
+    "recall": 0.9971
   },
   "assets": [
     {
       "path": "model.ocrpkg",
-      "sha256": "b9d95fb33a313603b520c0d2aa6342d9add174dbb4fc230b28b67ff0c6bbc40d",
-      "bytes": 10542344
+      "sha256": "fc9d38696ae88477b6165e957216425abb56342d4f0c34ae5c8e6c71eb63001f",
+      "bytes": 10542943
     },
     {
       "path": "weights/best.pt",
-      "sha256": "90ab90e41f635ccb457fc1fc91f8c995310b78d2d39c4b580105c8249aefe3b7",
-      "bytes": 6260778
+      "sha256": "ed2e1c1d4f06a60e8856376edcba63eaf0fbf1083e110770a748f61c19b2c78e",
+      "bytes": 6260586
     },
     {
       "path": "weights/best.onnx",
-      "sha256": "8e14565fda86ec651d450ad437443ea96d13fe2a1d2ee997963c8d6c40c84080",
+      "sha256": "3e2476257406d4efa6b99a097e48484dccb7a22c1bbafbc47f93f5403598277b",
       "bytes": 12295149
     }
   ],
   "web_weight": {
     "path": "weights/best.pt",
-    "sha256": "90ab90e41f635ccb457fc1fc91f8c995310b78d2d39c4b580105c8249aefe3b7",
-    "bytes": 6260778
+    "sha256": "ed2e1c1d4f06a60e8856376edcba63eaf0fbf1083e110770a748f61c19b2c78e",
+    "bytes": 6260586
   }
 }
