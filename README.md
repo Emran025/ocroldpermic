@@ -33,7 +33,7 @@ flowchart TD
     subgraph L3["Layer 3: Adaptive Training Engine (Python & Colab)"]
         HGT["historical_glyph_training<br/>• Colab-Resilient Session State<br/>• Leakage-Free Stratified Splitter<br/>• Per-Class Acceptance & Plateau Detection<br/>• Automated Reserve Remediation Loop<br/>• Regression Prevention Testing<br/>• .ocrpkg Release Bundler"]
         NB2["notebook/adaptive_training.ipynb<br/>• YOLO Curriculum Training Loop<br/>• Auto Checkpointing & Git Sync"]
-        NB3["notebook/archival_manuscript_synthesis.ipynb<br/>• 20-page archival synthesis<br/>• Latest-stage final trial"]
+        NB3["notebook/archival_manuscript_synthesis.ipynb<br/>• 32-page archival synthesis<br/>• Latest-stage final trial"]
     end
 
     subgraph L4["Layer 4: Archival Vision Lab (Flutter App)"]
@@ -97,7 +97,7 @@ flowchart TD
 
 - **`notebook/progressive_generation.ipynb`**: 16-cell interactive notebook for orchestrating the 12-stage synthetic dataset generation in Google Colab with secure token handling and live visual approval gates.
 - **`notebook/adaptive_training.ipynb`**: 19-cell production training notebook implementing the full adaptive training loop, plateau monitoring, automated remediation, regression checks, and model publishing.
-- **`notebook/archival_manuscript_synthesis.ipynb`**: 13-cell final notebook that creates 20 full-page synthetic archival documents from user backgrounds, exports YOLO labels and audit metadata, and discovers the highest available model stage dynamically. The document renderer is pinned to `01_Original_Handwriting/Original` for every glyph, adds faint ruled lines and controlled brown-red ink aging, and records that choice in each JSON sidecar. When no user background is supplied, it uses the Codex-inspired procedural profile stored in `codex_runicus_style_profile.json`, derived from the attached reference image using robust colour statistics and row-cadence analysis.
+- **`notebook/archival_manuscript_synthesis.ipynb`**: 13-cell final notebook that creates 32 full-page synthetic archival documents from user backgrounds, exports YOLO labels and audit metadata, and discovers the highest available model stage dynamically. The document renderer is pinned to `01_Original_Handwriting/Original` for every glyph, adds faint ruled lines and controlled brown-red ink aging, and records that choice in each JSON sidecar. When no user background is supplied, it uses the Codex-inspired procedural profile stored in `codex_runicus_style_profile.json`, derived from the attached reference image using robust colour statistics and row-cadence analysis.
 
 ### 5. Archival Vision Lab (`app/`)
 *Layer 4: Generic on-device Flutter OCR runtime*
@@ -175,7 +175,7 @@ Open the notebooks directly in Google Colab or your local Jupyter environment:
 
 1. **Generate Dataset**: Open [`notebook/progressive_generation.ipynb`](notebook/progressive_generation.ipynb) to generate synthetic dataset stages.
 2. **Train Model**: Open [`notebook/adaptive_training.ipynb`](notebook/adaptive_training.ipynb) to execute the curriculum training and package `.ocrpkg` models.
-3. **Generate archival documents and test the final model**: Open [`notebook/archival_manuscript_synthesis.ipynb`](notebook/archival_manuscript_synthesis.ipynb), upload backgrounds into `user_backgrounds/`, generate the 20-page set, and let the notebook discover the highest available stage automatically. The notebook explicitly marks outputs as synthetic research artifacts, not authentic historical documents.
+3. **Generate archival documents and test the final model**: Open [`notebook/archival_manuscript_synthesis.ipynb`](notebook/archival_manuscript_synthesis.ipynb), upload backgrounds into `user_backgrounds/`, generate the 32-page set, and let the notebook discover the highest available stage automatically. The notebook explicitly marks outputs as synthetic research artifacts, not authentic historical documents.
 
 ### 3. Flutter Application (Archival Vision Lab)
 
@@ -351,4 +351,4 @@ Generation is resumable at concept granularity. After every concept, the executo
 
 ### Final end-to-end trial
 
-`notebook/archival_manuscript_synthesis.ipynb` is the final integration gate for the three-person workflow. It refreshes the active code branch and a separate `colab-checkpoints` checkout, selects the newest stage-tagged model artifact, records its SHA-256, verifies that exactly 20 generated pages have matching metadata and labels, validates the final-page YOLO annotations against the model alphabet, runs inference, and writes `final_experiment.json` with an explicit `PASS` or `FAIL` status. It never silently falls back to an untracked or arbitrary model.
+`notebook/archival_manuscript_synthesis.ipynb` is the final integration gate for the three-person workflow. It refreshes the active code branch and a separate `colab-checkpoints` checkout, selects the newest stage-tagged model artifact, records its SHA-256, verifies that exactly 32 generated pages have matching metadata and labels, validates the final-page YOLO annotations against the model alphabet, runs inference, and writes `final_experiment.json` with an explicit `PASS` or `FAIL` status. It never silently falls back to an untracked or arbitrary model.
