@@ -30,6 +30,7 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p app/assets/models
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
           git fetch --no-tags --depth=1 origin colab-results
           latest_path="$(git ls-tree -r --name-only origin/colab-results \
             | grep -E '^artifacts/published/stage-[0-9]+/model\.ocrpkg$' \
