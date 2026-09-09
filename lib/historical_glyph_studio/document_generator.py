@@ -39,6 +39,9 @@ class DocumentSpec:
     surface_warp: float = 1.0
     writing_margin: float = 0.105
     line_curve: float = 0.018
+    # When provided, each item is rendered as one exact manuscript line.
+    # When omitted, the historical random-glyph behaviour is preserved.
+    text_lines: Optional[Sequence[str]] = None
 
 
 def _fit_background(source: Optional[Path], size: tuple[int, int], rng: np.random.Generator) -> Image.Image:
@@ -194,12 +197,25 @@ def generate_document(studio: GlyphStudio, spec: DocumentSpec, output_dir: str |
         line = _warp(line, matrix, (spec.width, spec.height), dx, dy)
         page_array = np.clip(page_array.astype(np.float32) - line[..., None] * np.array([.10, .07, .045]), 0, 255).astype(np.uint8)
 
+    explicit_lines = list(spec.text_lines) if spec.text_lines is not None else None
+    if explicit_lines is not None and len(explicit_lines) != spec.lines:
+        raise ValueError(
+            f"Document {spec.document_id:02d} expects {spec.lines} text lines, "
+            f"received {len(explicit_lines)}"
+        )
+
     for line_idx in range(spec.lines):
-        count = int(rng.integers(spec.min_chars, spec.max_chars + 1))
+        line_text = explicit_lines[line_idx] if explicit_lines is not None else None
+        count = len(line_text) if line_text is not None else int(rng.integers(spec.min_chars, spec.max_chars + 1))
         y = int(top + line_idx * line_gap + rng.integers(-5, 6))
         x = margin_x + int(rng.integers(-12, 13))
         for char_idx in range(count):
-            char = alphabet[int(rng.integers(0, len(alphabet)))]
+            char = line_text[char_idx] if line_text is not None else alphabet[int(rng.integers(0, len(alphabet)))]
+            if char not in alphabet:
+                raise ValueError(
+                    f"Character {char!r} in document {spec.document_id:02d}, "
+                    f"line {line_idx + 1}, column {char_idx + 1} is not in the glyph alphabet"
+                )
             result = studio.render(char=char, background=(155, 130, 95), operation=spec.material, family=spec.handwriting_family, style=spec.handwriting_style, rotation=(-7, 7), perspective=True, occlusion="mild", glyph_scale=float(rng.uniform(.30, .43)), canvas_size=(150, 150), seed=int(rng.integers(0, 2**31 - 1)), add_noise=True, noise_stddev=float(rng.uniform(1.5, 5.0)), blur_sigma=float(rng.uniform(0, .65)), erosion_iterations=int(rng.integers(0, 2)), fading_alpha=float(rng.uniform(0, .08)), color=(int(rng.integers(65, 125)), int(rng.integers(25, 75)), int(rng.integers(12, 45))))
             if result.glyph_mask is None:
                 continue
