@@ -12,7 +12,7 @@ from pathlib import Path
 from typing import Iterable, Optional, Sequence
 
 import numpy as np
-from PIL import Image, ImageEnhance, ImageFilter
+from PIL import Image, ImageDraw, ImageEnhance, ImageFilter
 
 from .annotation.yolo import YOLOAnnotation, bbox_from_mask, codepoint_to_class_id
 from .studio import GlyphStudio
@@ -101,7 +101,7 @@ def generate_document(
     records: list[dict] = []
     # Faint ruled lines and age/ink spots evoke the supplied codex while
     # remaining outside the OCR annotation layer.
-    draw = __import__("PIL.ImageDraw", fromlist=["ImageDraw"]).ImageDraw.Draw(page, "RGBA")
+    draw = ImageDraw.Draw(page, "RGBA")
     margin_x = int(spec.width * 0.13)
     top = int(spec.height * 0.12)
     line_gap = int((spec.height * 0.72) / max(spec.lines, 1))
@@ -161,13 +161,13 @@ def generate_document(
 
     # Non-OCR marks make the page look archival without polluting glyph labels.
     if spec.include_signature:
-        draw = __import__("PIL.ImageDraw", fromlist=["ImageDraw"]).ImageDraw.Draw(page, "RGBA")
+        draw = ImageDraw.Draw(page, "RGBA")
         sx, sy = int(spec.width * 0.63), int(spec.height * 0.86)
         for _ in range(3):
             pts = [(sx + k * 12, sy + int(rng.normal(0, 11))) for k in range(16)]
             draw.line(pts, fill=(75, 30, 20, 150), width=int(rng.integers(2, 5)), joint="curve")
     if spec.include_seal:
-        draw = __import__("PIL.ImageDraw", fromlist=["ImageDraw"]).ImageDraw.Draw(page, "RGBA")
+        draw = ImageDraw.Draw(page, "RGBA")
         cx, cy, r = int(spec.width * 0.82), int(spec.height * 0.86), int(spec.height * 0.035)
         draw.ellipse((cx-r, cy-r, cx+r, cy+r), outline=(120, 35, 24, 125), width=4)
         draw.ellipse((cx-r//2, cy-r//2, cx+r//2, cy+r//2), outline=(120, 35, 24, 105), width=2)
