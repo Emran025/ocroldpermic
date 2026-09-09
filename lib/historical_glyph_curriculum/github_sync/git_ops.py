@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import logging
 import json
+import os
 import random
 import re
 import subprocess
@@ -416,15 +417,20 @@ class GitManager:
         # erases another generator's stage. The final push is also non-force and
         # retries after rebasing if the remote advances during this operation.
         remote_ref = _run(["git", "ls-remote", "--heads", "origin", self.branch], self.repo_dir, check=False).stdout.strip()
+        target_relative = (
+            "manifests" if stage_id == 0 else f"datasets/stage_{stage_id:02d}"
+        )
         if remote_ref:
-            _run(["git", "fetch", "origin", self.branch], self.repo_dir)
+            fetch_cmd = ["git", "fetch", "origin", self.branch]
+            if self._is_partial_clone():
+                fetch_cmd = ["git", "fetch", "--filter=blob:none", "origin", self.branch]
+            _run(fetch_cmd, self.repo_dir)
+            self._prepare_sparse_checkout(target_relative)
             _run(["git", "checkout", "-B", self.branch, f"origin/{self.branch}"], self.repo_dir)
         else:
             _run(["git", "checkout", "-B", self.branch], self.repo_dir)
         output = Path(output_dir)
-        target = self.repo_dir / (
-            "manifests" if stage_id == 0 else f"datasets/stage_{stage_id:02d}"
-        )
+        target = self.repo_dir / target_relative
         target.mkdir(parents=True, exist_ok=True)
 
         if stage_id != 0 and output.is_dir():
@@ -468,6 +474,26 @@ class GitManager:
         """Return the current local commit hash."""
         return _run(["git", "rev-parse", "HEAD"], self.repo_dir).stdout.strip()
 
+    def _is_partial_clone(self) -> bool:
+        """Return whether this checkout was created with blob filtering."""
+        result = _run(
+            ["git", "config", "--get", "extensions.partialclone"],
+            self.repo_dir, check=False,
+        )
+        return result.returncode == 0 and bool(result.stdout.strip())
+
+    def _prepare_sparse_checkout(self, relative_path: str) -> None:
+        """Expose only the path being written in a partial checkout.
+
+        This is a local working-tree optimization. It does not alter the
+        remote tree, branch layout, or commit history. Full clones made by
+        older notebooks skip this method and retain their old behavior.
+        """
+        if not self._is_partial_clone():
+            return
+        _run(["git", "sparse-checkout", "init", "--cone"], self.repo_dir)
+        _run(["git", "sparse-checkout", "set", "--skip-checks", relative_path], self.repo_dir)
+
     # ------------------------------------------------------------------
     # Clone helper (class method, used from notebook)
     # ------------------------------------------------------------------
@@ -495,7 +521,17 @@ class GitManager:
             if url.startswith("https://github.com/"):
                 auth_url = url.replace("https://", f"https://{token}@")
 
-        cmd = ["git", "clone", "--branch", branch, "--depth", "1", auth_url, str(target_dir)]
+        # New notebook clones avoid downloading historical image blobs. The
+        # environment switch preserves the previous full-clone behavior for
+        # old/restricted runtimes without changing the public API.
+        use_partial = os.environ.get("GLYPH_GIT_PARTIAL_CLONE", "1").lower() not in {"0", "false", "no"}
+        if use_partial:
+            cmd = [
+                "git", "clone", "--filter=blob:none", "--no-checkout",
+                "--branch", branch, auth_url, str(target_dir),
+            ]
+        else:
+            cmd = ["git", "clone", "--branch", branch, "--depth", "1", auth_url, str(target_dir)]
         result = subprocess.run(cmd, capture_output=True, text=True)
         if result.returncode != 0:
             err = _redact(result.stderr)
